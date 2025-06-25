@@ -1,0 +1,16 @@
+{
+  "_checkout": null,
+  "_output_dir": "/storage/Projects/cctbx-esm3",
+  "_repo_dir": "/home/pzwart/.cookiecutters/cookiecutter-hypermodern-python",
+  "_template": "https://github.com/cjolowicz/cookiecutter-hypermodern-python",
+  "author": "Petrus Zwart",
+  "copyright_year": "2025",
+  "development_status": "Development Status :: 3 - Alpha",
+  "email": "PHZwart@lbl.gov",
+  "friendly_name": "Agentbx",
+  "github_user": "phzwart",
+  "license": "MIT",
+  "package_name": "agentbx",
+  "project_name": "agentbx",
+  "version": "0.1.0"
+}
