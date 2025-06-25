@@ -8,6 +8,12 @@ updates:
     directory: "/.github/workflows"
     schedule:
       interval: weekly
+    ignore:
+      - dependency-name: "pip"
+      - dependency-name: "nox"
+      - dependency-name: "nox-poetry"
+      - dependency-name: "poetry"
+      - dependency-name: "virtualenv"
   - package-ecosystem: pip
     directory: "/docs"
     schedule:
