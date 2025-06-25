@@ -63,6 +63,11 @@ jobs:
           pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
           nox --version
 
+      - name: Update vulnerable packages (for safety check)
+        if: matrix.session == 'safety'
+        run: |
+          pip install --upgrade bandit black certifi urllib3 virtualenv
+
       - name: Debug - Check Python and environment
         run: |
           python --version

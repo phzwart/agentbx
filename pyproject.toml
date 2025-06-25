@@ -39,8 +39,8 @@ numpy = "^1.20.0"
 
 [tool.poetry.group.dev.dependencies]
 Pygments = ">=2.10.0"
-bandit = ">=1.7.4"
-black = ">=21.10b0"
+bandit = ">=1.7.7"
+black = ">=24.3.0"
 coverage = {extras = ["toml"], version = ">=6.2"}
 darglint = ">=1.8.1"
 flake8 = ">=4.0.1"
