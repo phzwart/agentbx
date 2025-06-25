@@ -1,0 +1,90 @@
+# src/agentbx/schemas/definitions/structure_factor_data.yaml
+# Pure structure factor computation results
+
+task_type: structure_factor_data
+description: "Computed structure factors from atomic models"
+
+required_assets:
+  - f_calc
+  - miller_indices
+
+optional_assets:
+  - f_mask
+  - f_model
+  - scale_factors
+  - computation_info
+
+asset_definitions:
+  f_calc:
+    description: "Calculated structure factors from atomic model"
+    data_type: "cctbx.miller.array"
+    must_be_complex: true
+    required_attributes: ["indices", "data"]
+    checksum_required: true
+    
+  f_mask:
+    description: "Structure factors from bulk solvent mask"
+    data_type: "cctbx.miller.array"
+    must_be_complex: true
+    depends_on: [f_calc]
+    
+  f_model:
+    description: "Combined structure factors: scale * (f_calc + k_sol * f_mask)"
+    data_type: "cctbx.miller.array"
+    must_be_complex: true
+    depends_on: [f_calc, f_mask, scale_factors]
+    
+  miller_indices:
+    description: "Miller indices corresponding to structure factors"
+    data_type: "cctbx.miller.set"
+    must_match_f_calc: true
+    
+  scale_factors:
+    description: "Scaling parameters used in structure factor calculation"
+    data_type: "dict"
+    required_keys: ["k_overall"]
+    optional_keys: ["k_sol", "b_sol", "k_anisotropic"]
+    
+  computation_info:
+    description: "Metadata about structure factor calculation"
+    data_type: "dict"
+    expected_keys: ["algorithm", "resolution_range", "computation_time"]
+
+validation_rules:
+  f_calc:
+    - indices_not_empty: true
+    - complex_data_type: true
+    - finite_values_only: true
+    
+  f_mask:
+    - miller_indices_match_f_calc: true
+    - complex_data_type: true
+    
+  f_model:
+    - miller_indices_match_f_calc: true
+    - complex_data_type: true
+    - reasonable_amplitudes: true  # |F| should be reasonable
+    
+  scale_factors:
+    - k_overall_positive: true
+    - k_sol_range: [0.0, 1.0]  # if present
+
+workflow_patterns:
+  basic_calculation:
+    - requires: [atomic_model_data]
+    - produces: [f_calc, miller_indices]
+    
+  with_bulk_solvent:
+    - requires: [atomic_model_data.bulk_solvent_params]
+    - produces: [f_calc, f_mask, f_model, scale_factors]
+    
+  structure_factor_derivatives:
+    - input: [structure_factor_data]
+    - output: [structure_factor_gradients]
+
+dependencies:
+  - atomic_model_data  # Input bundle type
+  
+produces_for:
+  - target_data       # Can be input to target calculations
+  - gradient_data     # Can be input to gradient calculations
