@@ -5,6 +5,7 @@ This document describes how to use Redis with agentbx for data storage and cachi
 ## Overview
 
 The Redis integration provides:
+
 - Persistent storage for data bundles
 - Caching for computed results
 - Connection pooling and health monitoring
@@ -15,18 +16,21 @@ The Redis integration provides:
 ### 1. Install Redis
 
 **Ubuntu/Debian:**
+
 ```bash
 sudo apt-get install redis-server
 sudo systemctl start redis-server
 ```
 
 **macOS:**
+
 ```bash
 brew install redis
 brew services start redis
 ```
 
 **Docker:**
+
 ```bash
 docker run -d -p 6379:6379 redis:alpine
 ```
@@ -56,4 +60,5 @@ redis_manager = RedisManager(
 # Create agent
 agent = StructureFactorAgent(redis_manager, "sf_agent_001")
 
-# 
+#
+```

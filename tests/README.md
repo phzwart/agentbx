@@ -5,18 +5,21 @@ This directory contains the comprehensive test suite for AgentBX.
 ## Quick Start
 
 ### Run All Tests with Coverage
+
 ```bash
 # From the project root
 python tests/run_all_tests.py
 ```
 
 This will:
+
 - Run all tests with verbose output
 - Generate coverage reports (JSON, HTML, XML)
 - Check per-file coverage requirements from `coverage_requirements.yaml`
 - Provide a detailed summary
 
 ### Run Individual Test Files
+
 ```bash
 # Run specific test file
 pytest tests/core/test_base_client.py -v
@@ -32,38 +35,38 @@ Coverage requirements are defined in `tests/coverage_requirements.yaml`:
 ```yaml
 # Core functionality - high coverage requirements
 core:
-  src/agentbx/core/base_client.py: 100    # Core client should be fully tested
-  src/agentbx/core/redis_manager.py: 95   # High coverage for Redis functionality
+  src/agentbx/core/base_client.py: 100 # Core client should be fully tested
+  src/agentbx/core/redis_manager.py: 95 # High coverage for Redis functionality
 
 # Schema generation - complex code, lower requirements
 schemas:
-  src/agentbx/schemas/generator.py: 80    # Complex generator, hard to test everything
+  src/agentbx/schemas/generator.py: 80 # Complex generator, hard to test everything
 
 # Main entry points
 main:
-  src/agentbx/__main__.py: 100            # Main entry point should be fully tested
+  src/agentbx/__main__.py: 100 # Main entry point should be fully tested
 
 # Overall project requirements
 project:
-  overall_minimum: 85                      # Minimum overall coverage for the project
-  strict_mode: false                       # Whether to fail on any file below requirement
+  overall_minimum: 85 # Minimum overall coverage for the project
+  strict_mode: false # Whether to fail on any file below requirement
 
 # Optional: exclude files from coverage requirements
 exclude:
-  - src/agentbx/__init__.py               # Simple init files
-  - "*/__pycache__/*"                     # Python cache files
-  - "*/tests/*"                           # Test files themselves
+  - src/agentbx/__init__.py # Simple init files
+  - "*/__pycache__/*" # Python cache files
+  - "*/tests/*" # Test files themselves
 ```
 
 ### Current Coverage Status
 
-| File | Minimum Coverage | Current Coverage |
-|------|-----------------|------------------|
-| `src/agentbx/core/base_client.py` | 100% | 100% ✅ |
-| `src/agentbx/core/redis_manager.py` | 95% | 98.2% ✅ |
-| `src/agentbx/schemas/generator.py` | 80% | 82.1% ✅ |
-| `src/agentbx/__main__.py` | 100% | 100% ✅ |
-| **Overall** | **85%** | **88.2%** ✅ |
+| File                                | Minimum Coverage | Current Coverage |
+| ----------------------------------- | ---------------- | ---------------- |
+| `src/agentbx/core/base_client.py`   | 100%             | 100% ✅          |
+| `src/agentbx/core/redis_manager.py` | 95%              | 98.2% ✅         |
+| `src/agentbx/schemas/generator.py`  | 80%              | 82.1% ✅         |
+| `src/agentbx/__main__.py`           | 100%             | 100% ✅          |
+| **Overall**                         | **85%**          | **88.2%** ✅     |
 
 ## Generated Reports
 
@@ -113,6 +116,7 @@ To change coverage requirements:
 ## Coverage Exclusions
 
 Some lines are excluded from coverage:
+
 - Debug/development code
 - Abstract methods and protocols
 - Error handling for edge cases that are hard to trigger
@@ -121,6 +125,7 @@ Some lines are excluded from coverage:
 ## CI/CD Integration
 
 The test runner is designed to work with CI/CD pipelines:
+
 - Exit code 0: All tests pass and coverage requirements met
 - Exit code 1: Tests fail or coverage requirements not met
-- XML report available for CI tools like Codecov, SonarQube, etc. 
+- XML report available for CI tools like Codecov, SonarQube, etc.

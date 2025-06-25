@@ -93,4 +93,4 @@ retrieved_bundle = redis_manager.get_bundle(bundle_id)
 
 - Read the [Usage Guide](usage.md) for detailed examples
 - Check the [API Reference](reference.md) for complete documentation
-- Explore [Redis Integration](redis_integration.md) for advanced features 
+- Explore [Redis Integration](redis_integration.md) for advanced features

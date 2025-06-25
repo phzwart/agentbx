@@ -3,24 +3,24 @@
 
 # Core functionality - high coverage requirements
 core:
-  src/agentbx/core/base_client.py: 100    # Core client should be fully tested
-  src/agentbx/core/redis_manager.py: 95   # High coverage for Redis functionality
+  src/agentbx/core/base_client.py: 100 # Core client should be fully tested
+  src/agentbx/core/redis_manager.py: 95 # High coverage for Redis functionality
 
 # Schema generation - complex code, lower requirements
 schemas:
-  src/agentbx/schemas/generator.py: 80    # Complex generator, hard to test everything
+  src/agentbx/schemas/generator.py: 80 # Complex generator, hard to test everything
 
 # Main entry points
 main:
-  src/agentbx/__main__.py: 100            # Main entry point should be fully tested
+  src/agentbx/__main__.py: 100 # Main entry point should be fully tested
 
 # Overall project requirements
 project:
-  overall_minimum: 85                      # Minimum overall coverage for the project
-  strict_mode: false                       # Whether to fail on any file below requirement
+  overall_minimum: 85 # Minimum overall coverage for the project
+  strict_mode: false # Whether to fail on any file below requirement
 
 # Optional: exclude files from coverage requirements
 exclude:
-  - src/agentbx/__init__.py               # Simple init files
-  - "*/__pycache__/*"                     # Python cache files
-  - "*/tests/*"                           # Test files themselves 
+  - src/agentbx/__init__.py # Simple init files
+  - "*/__pycache__/*" # Python cache files
+  - "*/tests/*" # Test files themselves

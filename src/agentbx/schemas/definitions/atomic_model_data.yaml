@@ -19,13 +19,13 @@ asset_definitions:
     data_type: "cctbx.xray.structure"
     required_methods: ["scatterers", "unit_cell", "space_group", "sites_cart"]
     checksum_required: true
-    
+
   miller_indices:
     description: "Miller indices for structure factor calculation"
     data_type: "cctbx.miller.set"
     required_attributes: ["indices", "unit_cell", "space_group"]
     checksum_required: true
-    
+
   bulk_solvent_params:
     description: "Bulk solvent correction parameters"
     data_type: "dict"
@@ -33,12 +33,12 @@ asset_definitions:
     default_values:
       k_sol: 0.35
       b_sol: 50.0
-      
+
   anisotropic_scaling_params:
     description: "Anisotropic scaling parameters"
     data_type: "dict"
     required_keys: ["b11", "b22", "b33", "b12", "b13", "b23"]
-    
+
   model_metadata:
     description: "Model provenance and quality info"
     data_type: "dict"
@@ -50,12 +50,12 @@ validation_rules:
     - valid_space_group: true
     - positive_unit_cell: true
     - finite_coordinates: true
-    
+
   miller_indices:
     - indices_not_empty: true
     - valid_space_group: true
     - consistent_symmetry_with_xray_structure: true
-    
+
   bulk_solvent_params:
     - k_sol_range: [0.0, 1.0]
     - b_sol_range: [0.0, 200.0]
@@ -64,11 +64,11 @@ workflow_patterns:
   initialization:
     - requires: [xray_structure, miller_indices]
     - validates: ["symmetry_consistency", "coordinate_sanity"]
-    
+
   update_coordinates:
     - modifies: [xray_structure]
     - preserves: [miller_indices, bulk_solvent_params]
-    
+
   update_b_factors:
     - modifies: [xray_structure]
     - preserves: [miller_indices]

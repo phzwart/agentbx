@@ -118,4 +118,4 @@ Generated Schemas
 ~~~~~~~~~~~~~~~~
 
 .. automodule:: agentbx.schemas.generated
-   :members: 
+   :members:

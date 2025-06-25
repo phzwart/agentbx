@@ -39,6 +39,7 @@ python examples/download_pdb_data.py --list-available
 ```
 
 Recommended structures:
+
 - `1ubq` - Ubiquitin (small, well-determined)
 - `1lyd` - Lysozyme (classic test case)
 - `1crn` - Crambin (small protein)
@@ -48,11 +49,13 @@ Recommended structures:
 ## Prerequisites
 
 1. **Redis server running**
+
    ```bash
    redis-server
    ```
 
 2. **CCTBX environment activated**
+
    ```bash
    conda activate cctbx_esm3
    ```
@@ -62,9 +65,11 @@ Recommended structures:
 ## Scripts Overview
 
 ### `download_pdb_data.py`
+
 Downloads PDB and MTZ files from the Protein Data Bank.
 
 **Usage:**
+
 ```bash
 # Download specific PDB code
 python examples/download_pdb_data.py 1ubq
@@ -77,6 +82,7 @@ python examples/download_pdb_data.py 1ubq --force
 ```
 
 **Features:**
+
 - Downloads PDB structure files
 - Attempts to download associated MTZ data
 - Generates synthetic MTZ data if none available
@@ -84,31 +90,37 @@ python examples/download_pdb_data.py 1ubq --force
 - Provides progress feedback
 
 ### `inspect_pdb_data.py`
+
 Inspects downloaded PDB and MTZ files.
 
 **Usage:**
+
 ```bash
 python examples/inspect_pdb_data.py
 ```
 
 **Shows:**
+
 - Unit cell and space group information
 - Number of atoms and chains
 - Miller array details and statistics
 - Data compatibility assessment
 
 ### `redis_structure_factor_example.py`
+
 Main example demonstrating Redis integration.
 
 **Usage:**
+
 ```bash
 python examples/redis_structure_factor_example.py
 ```
 
 **Demonstrates:**
+
 - Reading real crystallographic data
 - Redis bundle storage and retrieval
 - Structure factor calculations
 - Agent workflow execution
 
-## File Structure 
+## File Structure

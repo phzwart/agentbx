@@ -34,6 +34,7 @@ This design enables researchers to combine cutting-edge AI predictions (protein 
 ## Core Architecture
 
 ### 1. **Agent System**
+
 - **SinglePurposeAgent**: Base class for agents with one clear responsibility
 - **StructureFactorAgent**: Calculates structure factors from atomic models
 - **TargetAgent**: Computes target functions for refinement
@@ -42,6 +43,7 @@ This design enables researchers to combine cutting-edge AI predictions (protein 
 - **AI Model Agents**: Future agents for protein structure prediction, density interpretation, etc.
 
 ### 2. **Redis Manager**
+
 - **Persistent Storage**: Stores data bundles with TTL and metadata
 - **Message Queues**: Status messages and workflow coordination
 - **Serialization**: Handles complex CCTBX objects via pickle/JSON
@@ -49,12 +51,14 @@ This design enables researchers to combine cutting-edge AI predictions (protein 
 - **Caching**: Built-in caching for expensive computations
 
 ### 3. **Bundle System**
+
 - **Data Containers**: Bundles hold related crystallographic data assets
 - **Metadata**: Creation time, checksums, provenance information
 - **Validation**: Built-in validation for bundle contents
 - **Type Safety**: Strong typing for different bundle types
 
 ### 4. **Utility Framework**
+
 - **File Handling**: PDB/MTZ file reading and validation
 - **Data Analysis**: Complex number analysis, miller array statistics
 - **Workflow Management**: Multi-step workflow orchestration
@@ -63,31 +67,37 @@ This design enables researchers to combine cutting-edge AI predictions (protein 
 ## Key Features
 
 ### **Modular Design**
+
 Each agent does ONE thing well:
+
 - StructureFactorAgent: Only calculates structure factors
 - TargetAgent: Only computes target functions
 - AI Model Agents: Only handle AI predictions
 - No mixing of concerns between agents
 
 ### **Technology Stack Separation**
+
 - **AI Models**: Can run on GPU clusters with PyTorch/TensorFlow
 - **Crystallographic Tools**: Run on CPU clusters with CCTBX/Phenix
 - **Redis Middleware**: Coordinates between different computational resources
 - **Event-Driven**: Agents react to status messages, enabling asynchronous processing
 
 ### **Persistent Data Flow**
+
 - Redis stores all intermediate results
 - Agents can be restarted without losing data
 - Data persists between workflow runs
 - Unique bundle IDs for tracking
 
 ### **Crystallographic Integration**
+
 - Native CCTBX support for crystallographic calculations
 - Handles real PDB/MTZ files
 - Structure factor calculations with bulk solvent
 - R-factor computation and validation
 
 ### **Scalable Architecture**
+
 - Redis enables distributed processing
 - Multiple agents can work on same data
 - Easy to add new agent types
@@ -105,6 +115,7 @@ Each agent does ONE thing well:
 ## Future AI Integration Workflows
 
 ### **AI-Assisted Structure Determination**
+
 1. **AI Model Agent**: Predicts initial protein structure from sequence
 2. **StructureFactorAgent**: Calculates structure factors from AI prediction
 3. **TargetAgent**: Computes target function comparing to experimental data
@@ -112,6 +123,7 @@ Each agent does ONE thing well:
 5. **ValidationAgent**: Assesses structure quality
 
 ### **AI-Enhanced Electron Density Interpretation**
+
 1. **ExperimentalDataAgent**: Processes experimental data
 2. **AI Density Agent**: Interprets electron density using deep learning
 3. **StructureFactorAgent**: Calculates structure factors
@@ -120,24 +132,28 @@ Each agent does ONE thing well:
 ## Use Cases
 
 ### **Crystallographic Refinement**
+
 - Structure factor calculation from atomic models
 - Target function computation for refinement
 - Gradient calculation for optimization
 - Experimental data integration
 
 ### **AI-Crystallography Integration**
+
 - Protein structure prediction integration
 - Electron density interpretation with AI
 - Automated structure validation
 - AI-assisted model building
 
 ### **Data Pipeline Management**
+
 - Persistent storage of intermediate results
 - Workflow orchestration for complex calculations
 - Data validation and quality control
 - Reproducible research workflows
 
 ### **Distributed Computing**
+
 - Multiple agents working on same dataset
 - Redis as central data store
 - Scalable architecture for large datasets
@@ -170,21 +186,25 @@ $ pip install agentbx[redis-agents]
 ## Quick Start
 
 ### 1. Start Redis Server
+
 ```bash
 redis-server
 ```
 
 ### 2. Download Test Data
+
 ```bash
 python examples/download_pdb_data.py 1ubq
 ```
 
 ### 3. Run Structure Factor Calculation
+
 ```bash
 python examples/redis_structure_factor_example.py
 ```
 
 ### 4. Use CLI Tools
+
 ```bash
 # Validate files
 python -m agentbx.utils.cli validate examples/input.pdb examples/input.mtz

@@ -24,47 +24,49 @@ asset_definitions:
     data_must_be_real: true
     data_must_be_positive: true
     checksum_required: true
-    
+
   miller_indices:
     description: "Miller indices for experimental reflections"
     data_type: "cctbx.miller.set"
     required_attributes: ["indices", "unit_cell", "space_group"]
     must_match_f_obs: true
-    
+
   r_free_flags:
     description: "Free R flags for cross-validation"
     data_type: "cctbx.miller.array"
     data_type_must_be: "bool"
     must_match_f_obs_indices: true
     recommended_free_fraction: [0.05, 0.10]
-    
+
   sigmas:
     description: "Uncertainties in observed structure factors"
     data_type: "cctbx.miller.array"
     data_must_be_positive: true
     must_match_f_obs_indices: true
-    
+
   i_obs:
     description: "Observed intensities (if available)"
     data_type: "cctbx.miller.array"
     data_must_be_positive: true
     alternative_to: [f_obs]
-    
+
   anomalous_data:
     description: "Anomalous scattering data (F+, F-, or I+, I-)"
     data_type: "dict"
     required_keys_if_present: ["f_plus", "f_minus"]
     alternative_keys: ["i_plus", "i_minus"]
-    
+
   experimental_metadata:
     description: "Experimental conditions and data collection info"
     data_type: "dict"
-    expected_keys: ["wavelength", "temperature", "resolution_range", "completeness"]
-    
+    expected_keys:
+      ["wavelength", "temperature", "resolution_range", "completeness"]
+
   target_preferences:
     description: "Preferred target function for this dataset"
     data_type: "dict"
-    allowed_target_types: ["maximum_likelihood", "least_squares", "least_squares_f"]
+    allowed_target_types:
+      ["maximum_likelihood", "least_squares", "least_squares_f"]
     default_target: "maximum_likelihood"
 
 validation_rules:
@@ -73,22 +75,22 @@ validation_rules:
     - positive_amplitudes: true
     - reasonable_amplitude_range: true
     - no_systematic_absences_violation: true
-    
+
   r_free_flags:
     - reasonable_free_fraction: [0.03, 0.15]
     - random_distribution: true
     - indices_match_f_obs: true
-    
+
   sigmas:
     - positive_sigmas: true
-    - reasonable_sigma_f_ratio: [0.01, 0.5]  # sigma/F should be reasonable
-    
+    - reasonable_sigma_f_ratio: [0.01, 0.5] # sigma/F should be reasonable
+
   resolution_consistency:
     - f_obs_resolution_matches_metadata: true
     - reasonable_resolution_range: true
-    
+
   completeness_checks:
-    - sufficient_data_completeness: 0.85  # at least 85%
+    - sufficient_data_completeness: 0.85 # at least 85%
     - adequate_high_resolution_data: true
 
 workflow_patterns:
@@ -96,20 +98,20 @@ workflow_patterns:
     - input: [i_obs, sigmas]
     - process: "french_wilson"
     - output: [f_obs, sigmas]
-    
+
   anomalous_processing:
     - input: [anomalous_data]
     - process: "anomalous_scaling"
     - output: [f_obs, anomalous_differences]
-    
+
   data_validation:
     - checks: ["completeness", "resolution", "systematic_absences"]
     - outputs: [validation_report]
 
 produces_for:
-  - target_data      # F_obs needed for target calculations
-  - validation_data  # Experimental data for quality assessment
-  - scaling_data     # For absolute scaling procedures
+  - target_data # F_obs needed for target calculations
+  - validation_data # Experimental data for quality assessment
+  - scaling_data # For absolute scaling procedures
 
 quality_metrics:
   resolution_range: "1/d_min to 1/d_max in Angstroms"

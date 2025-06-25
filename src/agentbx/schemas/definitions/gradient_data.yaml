@@ -20,25 +20,25 @@ asset_definitions:
     shape: "[n_atoms, 3]"
     units: "target_units/angstrom"
     checksum_required: true
-    
+
   bfactor_gradients:
     description: "Gradients w.r.t. B-factors: dT/d(B)"
     data_type: "cctbx.array_family.flex.double"
     shape: "[n_atoms]"
     units: "target_units/angstrom^2"
-    
+
   occupancy_gradients:
     description: "Gradients w.r.t. occupancies: dT/d(occ)"
     data_type: "cctbx.array_family.flex.double"
     shape: "[n_atoms]"
     units: "target_units"
-    
+
   structure_factor_gradients:
     description: "Intermediate: gradients w.r.t. structure factors dT/dF"
     data_type: "cctbx.miller.array"
     must_be_complex: true
     used_for_chain_rule: true
-    
+
   gradient_metadata:
     description: "Gradient computation information"
     data_type: "dict"
@@ -49,15 +49,15 @@ validation_rules:
     - shape_matches_atoms: true
     - finite_gradients: true
     - reasonable_magnitude: true
-    
+
   bfactor_gradients:
     - finite_gradients: true
     - length_matches_atoms: true
-    
+
   occupancy_gradients:
     - finite_gradients: true
     - length_matches_atoms: true
-    
+
   gradient_norms:
     - coordinate_gradient_norm_reasonable: true
     - no_infinite_gradients: true
@@ -67,22 +67,22 @@ workflow_patterns:
     - requires: [target_data.target_gradients_wrt_sf, structure_factor_data]
     - method: "chain_rule"
     - produces: [coordinate_gradients]
-    
+
   finite_difference_verification:
     - requires: [atomic_model_data, target_data]
     - method: "finite_differences"
     - produces: [coordinate_gradients]
     - use_case: "validation"
-    
+
   full_parameter_gradients:
     - produces: [coordinate_gradients, bfactor_gradients, occupancy_gradients]
     - enables: [full_refinement]
 
 dependencies:
-  - target_data           # dT/dF gradients
-  - structure_factor_data # dF/d(params) gradients  
-  - atomic_model_data     # parameter definitions
-  
+  - target_data # dT/dF gradients
+  - structure_factor_data # dF/d(params) gradients
+  - atomic_model_data # parameter definitions
+
 produces_for:
-  - optimization_data     # Gradients for parameter updates
-  - convergence_data      # Gradient norms for convergence
+  - optimization_data # Gradients for parameter updates
+  - convergence_data # Gradient norms for convergence
