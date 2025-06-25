@@ -214,13 +214,12 @@ def mypy(session: Session) -> None:
 
     # Try to check noxfile.py, but skip if there are issues with Python executable path
     if not session.posargs:
-        try:
+        # Check if the Python executable is accessible
+        if os.path.exists(sys.executable):
+            # If we get here, the executable is accessible
             session.run("mypy", f"--python-executable={sys.executable}", "noxfile.py")
-        except Exception as e:
-            print(f"Warning: Could not check noxfile.py with mypy: {e}")
-            print(
-                "This is likely due to Python executable path issues in CI environment."
-            )
+        else:
+            print(f"Warning: Python executable not found at {sys.executable}")
             print("Skipping noxfile.py type checking.")
 
 

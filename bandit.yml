@@ -1,2 +1,6 @@
 assert_used:
   skips: ["*/test_*.py"]
+
+# Skip B603 for safe subprocess calls in noxfile.py
+subprocess_without_shell_equals_true:
+  skips: ["noxfile.py"]
