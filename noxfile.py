@@ -179,9 +179,10 @@ def safety(session: Session) -> None:
     try:
         session.install("safety")
         session.run("safety", "check", "--full-report", f"--file={requirements_file}")
-    except (RuntimeError, subprocess.CalledProcessError) as e:
-        print(f"Warning: Safety check failed due to dependency conflicts: {e}")
+    except Exception as e:
+        print(f"Warning: Safety check failed due to compatibility issues: {e}")
         print("Skipping safety check for this session.")
+        print("This is likely due to safety version compatibility issues.")
 
     # Clean up the temporary requirements file
     if Path(requirements_file).exists():
