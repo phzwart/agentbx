@@ -63,6 +63,18 @@ jobs:
           pipx inject --pip-args=--constraint=.github/workflows/constraints.txt nox nox-poetry
           nox --version
 
+      - name: Debug - Check Python and environment
+        run: |
+          python --version
+          which python
+          pip list
+          echo "NOXSESSION: ${{ matrix.session }}"
+          echo "Python version: ${{ matrix.python }}"
+
+      - name: Debug - List available nox sessions
+        run: |
+          nox --list
+
       - name: Compute pre-commit cache key
         if: matrix.session == 'pre-commit'
         id: pre-commit-cache
