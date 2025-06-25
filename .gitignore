@@ -8,3 +8,9 @@
 /docs/_build/
 /src/*.egg-info/
 __pycache__/
+
+# Crystallographic data files
+*.pdb
+*.mtz
+*.cif
+*.ent

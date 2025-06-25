@@ -21,35 +21,37 @@ asset_definitions:
     data_type: "float"
     must_be_finite: true
     checksum_required: true
-    
+
   target_type:
     description: "Type of target function used"
     data_type: "str"
-    allowed_values: ["maximum_likelihood", "least_squares", "least_squares_f", "mlhl"]
-    
+    allowed_values:
+      ["maximum_likelihood", "least_squares", "least_squares_f", "mlhl"]
+
   r_factors:
     description: "Crystallographic R-factors"
     data_type: "dict"
     required_keys: ["r_work", "r_free"]
-    optional_keys: ["r_all", "number_reflections_work", "number_reflections_free"]
-    
+    optional_keys:
+      ["r_all", "number_reflections_work", "number_reflections_free"]
+
   target_per_reflection:
     description: "Target contribution from each reflection"
     data_type: "cctbx.array_family.flex.double"
     must_match_miller_indices: true
-    
+
   likelihood_parameters:
     description: "Maximum likelihood alpha and beta parameters"
     data_type: "dict"
     required_keys: ["alpha", "beta"]
     only_for_target_types: ["maximum_likelihood", "mlhl"]
-    
+
   target_gradients_wrt_sf:
     description: "Gradients of target w.r.t structure factors"
     data_type: "cctbx.miller.array"
     must_be_complex: true
     depends_on: [target_value]
-    
+
   target_metadata:
     description: "Target computation metadata"
     data_type: "dict"
@@ -58,18 +60,18 @@ asset_definitions:
 validation_rules:
   target_value:
     - finite_value: true
-    - reasonable_range: true  # depends on target_type
-    
+    - reasonable_range: true # depends on target_type
+
   r_factors:
     - r_work_range: [0.0, 1.0]
-    - r_free_range: [0.0, 1.0] 
-    - r_free_greater_than_r_work: true  # usually true
-    
+    - r_free_range: [0.0, 1.0]
+    - r_free_greater_than_r_work: true # usually true
+
   likelihood_parameters:
     - alpha_positive: true
     - beta_positive: true
     - reasonable_alpha_range: [0.0, 10.0]
-    
+
   target_gradients_wrt_sf:
     - miller_indices_consistent: true
     - finite_gradients: true
@@ -79,117 +81,20 @@ workflow_patterns:
     - requires: [structure_factor_data, experimental_data]
     - target_type: "maximum_likelihood"
     - produces: [target_value, r_factors, likelihood_parameters]
-    
+
   least_squares:
     - requires: [structure_factor_data, experimental_data]
     - target_type: "least_squares"
     - produces: [target_value, r_factors]
-    
+
   with_gradients:
     - additional_output: [target_gradients_wrt_sf]
     - enables: [gradient_calculation]
 
 dependencies:
-  - structure_factor_data  # Input bundle
-  - experimental_data      # Input bundle
-  
+  - structure_factor_data # Input bundle
+  - experimental_data # Input bundle
+
 produces_for:
-  - gradient_data         # Target gradients needed for chain rule
-  - validation_data       # R-factors for quality assessment# src/agentbx/schemas/definitions/target_data.yaml
-# Pure target function results - no atomic parameters, just target values
-
-task_type: target_data
-description: "Target function values computed from structure factors and experimental data"
-
-required_assets:
-  - target_value
-  - target_type
-
-optional_assets:
-  - r_factors
-  - target_per_reflection
-  - likelihood_parameters
-  - target_gradients_wrt_sf
-  - target_metadata
-
-asset_definitions:
-  target_value:
-    description: "Scalar target function value"
-    data_type: "float"
-    must_be_finite: true
-    checksum_required: true
-    
-  target_type:
-    description: "Type of target function used"
-    data_type: "str"
-    allowed_values: ["maximum_likelihood", "least_squares", "least_squares_f", "mlhl"]
-    
-  r_factors:
-    description: "Crystallographic R-factors"
-    data_type: "dict"
-    required_keys: ["r_work", "r_free"]
-    optional_keys: ["r_all", "number_reflections_work", "number_reflections_free"]
-    
-  target_per_reflection:
-    description: "Target contribution from each reflection"
-    data_type: "cctbx.array_family.flex.double"
-    must_match_miller_indices: true
-    
-  likelihood_parameters:
-    description: "Maximum likelihood alpha and beta parameters"
-    data_type: "dict"
-    required_keys: ["alpha", "beta"]
-    only_for_target_types: ["maximum_likelihood", "mlhl"]
-    
-  target_gradients_wrt_sf:
-    description: "Gradients of target w.r.t structure factors"
-    data_type: "cctbx.miller.array"
-    must_be_complex: true
-    depends_on: [target_value]
-    
-  target_metadata:
-    description: "Target computation metadata"
-    data_type: "dict"
-    expected_keys: ["computation_time", "convergence_info", "weights"]
-
-validation_rules:
-  target_value:
-    - finite_value: true
-    - reasonable_range: true  # depends on target_type
-    
-  r_factors:
-    - r_work_range: [0.0, 1.0]
-    - r_free_range: [0.0, 1.0] 
-    - r_free_greater_than_r_work: true  # usually true
-    
-  likelihood_parameters:
-    - alpha_positive: true
-    - beta_positive: true
-    - reasonable_alpha_range: [0.0, 10.0]
-    
-  target_gradients_wrt_sf:
-    - miller_indices_consistent: true
-    - finite_gradients: true
-
-workflow_patterns:
-  maximum_likelihood:
-    - requires: [structure_factor_data, experimental_data]
-    - target_type: "maximum_likelihood"
-    - produces: [target_value, r_factors, likelihood_parameters]
-    
-  least_squares:
-    - requires: [structure_factor_data, experimental_data]
-    - target_type: "least_squares"
-    - produces: [target_value, r_factors]
-    
-  with_gradients:
-    - additional_output: [target_gradients_wrt_sf]
-    - enables: [gradient_calculation]
-
-dependencies:
-  - structure_factor_data  # Input bundle
-  - experimental_data      # Input bundle
-  
-produces_for:
-  - gradient_data         # Target gradients needed for chain rule
-  - validation_data       # R-factors for quality assessment
+  - gradient_data # Target gradients needed for chain rule
+  - validation_data # R-factors for quality assessment
