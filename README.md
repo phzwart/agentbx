@@ -1,7 +1,5 @@
 # Agentbx: A Redis-Based Crystallographic Agent System
 
-[![PyPI](https://img.shields.io/pypi/v/agentbx.svg)][pypi status]
-[![Status](https://img.shields.io/pypi/status/agentbx.svg)][pypi status]
 [![Python Version](https://img.shields.io/pypi/pyversions/agentbx)][pypi status]
 [![License](https://img.shields.io/pypi/l/agentbx)][license]
 
