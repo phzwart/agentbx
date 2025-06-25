@@ -19,7 +19,7 @@
 
 ## Overview
 
-Agentbx is a Python-based system for managing crystallographic data processing workflows using a Redis-backed agent architecture. It's designed to handle complex crystallographic calculations (like structure factor determination) through modular, single-responsibility agents that communicate via persistent data bundles.
+Agentbx is a Python-based system for managing crystallographic & electron microscopy computing workflows using a Redis-backed agent architecture. It's designed to handle complex calculations using best-in-class algorithms (like structure factor calculation) through modular, single-responsibility agents that communicate via persistent data bundles.
 
 ## Vision & Motivation
 
