@@ -232,7 +232,9 @@ def mypy(session: Session) -> None:
     if not session.posargs and "CI" not in os.environ:
         if is_python_executable_valid(sys.executable):
             try:
-                session.run("mypy", f"--python-executable={sys.executable}", "noxfile.py")
+                session.run(
+                    "mypy", f"--python-executable={sys.executable}", "noxfile.py"
+                )
             except subprocess.CalledProcessError:
                 print(
                     "Warning: Could not check noxfile.py with mypy: "
