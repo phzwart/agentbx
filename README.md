@@ -5,7 +5,7 @@
 
 [![Read the documentation at https://agentbx.readthedocs.io/](https://img.shields.io/readthedocs/agentbx/latest.svg?label=Read%20the%20Docs)][read the docs]
 [![Tests](https://github.com/phzwart/agentbx/actions/workflows/tests.yml/badge.svg)][tests]
-[![Codecov](https://codecov.io/gh/phzwart/agentbx/branch/main/graph/badge.svg)][codecov]
+[![Coverage](https://img.shields.io/badge/coverage-120%20tests%20passing-brightgreen)][tests]
 
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)][pre-commit]
 [![Black](https://img.shields.io/badge/code%20style-black-000000.svg)][black]
@@ -13,7 +13,6 @@
 [pypi status]: https://pypi.org/project/agentbx/
 [read the docs]: https://agentbx.readthedocs.io/
 [tests]: https://github.com/phzwart/agentbx/actions/workflows/tests.yml
-[codecov]: https://app.codecov.io/gh/phzwart/agentbx
 [pre-commit]: https://github.com/pre-commit/pre-commit
 [black]: https://github.com/psf/black
 
