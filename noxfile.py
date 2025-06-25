@@ -164,15 +164,16 @@ def safety(session: Session) -> None:
         # Fallback for older Poetry versions or when plugin installation fails
         # Use pip freeze as a fallback method
         requirements_file = "requirements-export.txt"
-        session.run(
-            "poetry",
-            "run",
-            "pip",
-            "freeze",
-            "--exclude-editable",
-            external=True,
-            stdout=requirements_file,
-        )
+        with open(requirements_file, "w") as f:
+            session.run(
+                "poetry",
+                "run",
+                "pip",
+                "freeze",
+                "--exclude-editable",
+                external=True,
+                stdout=f,
+            )
 
     # Try to run safety with the existing version, skip if there are conflicts
     try:
@@ -191,16 +192,19 @@ def install_poetry_export_plugin(session: Session) -> None:
     """Install poetry-plugin-export for Poetry 2.0+ compatibility."""
     try:
         session.run("poetry", "self", "add", "poetry-plugin-export", external=True)
-    except (RuntimeError, subprocess.CalledProcessError):
+    except Exception as e:
         # Plugin might already be installed or Poetry version incompatible, continue
         # The nox-poetry package will handle the export functionality
+        print(f"Warning: Could not install poetry-plugin-export: {e}")
+        print("Continuing without poetry-plugin-export...")
         pass
 
 
 @session(python=python_versions)
 def mypy(session: Session) -> None:
     """Type-check using mypy."""
-    # Install poetry-plugin-export for Poetry 2.0+ compatibility
+    # Try to install poetry-plugin-export for Poetry 2.0+ compatibility
+    # This is optional and will be skipped if Poetry version is incompatible
     install_poetry_export_plugin(session)
 
     args = session.posargs or ["src", "tests", "docs/conf.py"]
