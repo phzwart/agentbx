@@ -1,7 +1,7 @@
 # Agentbx: A Redis-Based Crystallographic Agent System
 
 [![Python Version](https://img.shields.io/pypi/pyversions/agentbx)][pypi status]
-[![License](https://img.shields.io/pypi/l/agentbx)][license]
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)][license]
 
 [![Read the documentation at https://agentbx.readthedocs.io/](https://img.shields.io/readthedocs/agentbx/latest.svg?label=Read%20the%20Docs)][read the docs]
 [![Tests](https://github.com/phzwart/agentbx/workflows/Tests/badge.svg)][tests]
