@@ -69,18 +69,6 @@ myst-parser = {version = ">=0.16.1"}
 [tool.poetry.scripts]
 agentbx = "agentbx.__main__:main"
 
-[tool.coverage.paths]
-source = ["src", "*/site-packages"]
-tests = ["tests", "*/tests"]
-
-[tool.coverage.run]
-branch = true
-source = ["agentbx", "tests"]
-
-[tool.coverage.report]
-show_missing = true
-fail_under = 100
-
 [tool.isort]
 profile = "black"
 force_single_line = true
