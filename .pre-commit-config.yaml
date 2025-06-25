@@ -1,6 +1,32 @@
+# See https://pre-commit.com for more information
+# This file hooks into git to run checks before commits
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-symlinks
+      - id: check-json
   - repo: local
     hooks:
+      - id: prevent-edit-generated-py
+        name: Prevent direct edits to generated.py
+        entry: bash
+        args:
+          [
+            "-c",
+            'if git diff --cached --name-only | grep -q "src/agentbx/schemas/generated.py"; then echo "ERROR: Do not edit src/agentbx/schemas/generated.py directly. Edit generator.py or YAML schemas and regenerate." && exit 1; fi',
+          ]
+        language: system
+        types: [python]
+        always_run: true
+        verbose: true
       - id: bandit
         name: bandit
         entry: bandit
@@ -14,32 +40,17 @@ repos:
         language: system
         types: [python]
         require_serial: true
-      - id: check-added-large-files
-        name: Check for added large files
-        entry: check-added-large-files
-        language: system
       - id: check-toml
         name: Check Toml
         entry: check-toml
         language: system
         types: [toml]
-      - id: check-yaml
-        name: Check Yaml
-        entry: check-yaml
-        language: system
-        types: [yaml]
       - id: darglint
         name: darglint
         entry: darglint
         language: system
         types: [python]
         stages: [manual]
-      - id: end-of-file-fixer
-        name: Fix End of Files
-        entry: end-of-file-fixer
-        language: system
-        types: [text]
-        stages: [commit, push, manual]
       - id: flake8
         name: flake8
         entry: flake8

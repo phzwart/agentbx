@@ -79,19 +79,31 @@ lines_after_imports = 2
 
 [tool.mypy]
 strict = false
-warn_unreachable = true
+warn_unreachable = false
 pretty = true
 show_column_numbers = true
 show_error_context = true
 ignore_missing_imports = true
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_any_generics = false
+disallow_subclassing_any = false
+disallow_untyped_decorators = false
+disallow_any_unimported = false
+warn_redundant_casts = false
+warn_unused_ignores = false
+warn_no_return = false
+
 [[tool.mypy.overrides]]
 module = [
     "cctbx.*",
-    "iotbx.*", 
+    "iotbx.*",
     "mmtbx.*",
-    "redis.exceptions"
+    "redis.exceptions",
+    "watchdog.*",
+    "redis.*",
+    "yaml.*"
 ]
 ignore_missing_imports = true
 

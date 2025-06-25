@@ -141,14 +141,44 @@ def precommit(session: Session) -> None:
 @session(python=python_versions[0])
 def safety(session: Session) -> None:
     """Scan dependencies for insecure packages."""
-    requirements = session.poetry.export_requirements()
+    # Install poetry-plugin-export for Poetry 2.0+ compatibility
+    session.run("poetry", "self", "add", "poetry-plugin-export")
+
+    # Export requirements using the plugin
+    requirements_file = "requirements-export.txt"
+    session.run(
+        "poetry",
+        "export",
+        "-f",
+        "requirements.txt",
+        "--output",
+        requirements_file,
+        "--without-hashes",
+    )
+
     session.install("safety")
-    session.run("safety", "check", "--full-report", f"--file={requirements}")
+    session.run("safety", "check", "--full-report", f"--file={requirements_file}")
+
+    # Clean up the temporary requirements file
+    if Path(requirements_file).exists():
+        Path(requirements_file).unlink()
+
+
+def install_poetry_export_plugin(session: Session) -> None:
+    """Install poetry-plugin-export for Poetry 2.0+ compatibility."""
+    try:
+        session.run("poetry", "self", "add", "poetry-plugin-export", external=True)
+    except Exception:
+        # Plugin might already be installed, continue
+        pass
 
 
 @session(python=python_versions)
 def mypy(session: Session) -> None:
     """Type-check using mypy."""
+    # Install poetry-plugin-export for Poetry 2.0+ compatibility
+    install_poetry_export_plugin(session)
+
     args = session.posargs or ["src", "tests", "docs/conf.py"]
     session.install(".")
     session.install("mypy", "mypy-extensions", "types-PyYAML", "types-redis", "pytest")
