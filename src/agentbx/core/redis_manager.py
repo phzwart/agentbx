@@ -140,12 +140,24 @@ class RedisManager:
             # JSON-encoded data
             try:
                 return json.loads(data.decode('utf-8'))
-            except json.JSONDecodeError:
-                # Fall back to pickle if JSON fails
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                # Try to find the first non-JSON byte and unpickle from there
+                for i, b in enumerate(data):
+                    if b == 0x80:  # likely start of pickle protocol
+                        try:
+                            return pickle.loads(data[i:])
+                        except Exception:
+                            break
+                # Fallback: try to unpickle the whole thing
                 return pickle.loads(data)
         else:
-            # Pickle-encoded data
-            return pickle.loads(data)
+            # Try JSON first for numbers, booleans, etc.
+            try:
+                decoded = data.decode('utf-8')
+                return json.loads(decoded)
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                # Fall back to pickle for complex objects
+                return pickle.loads(data)
     
     def _generate_key(self, prefix: str, identifier: str) -> str:
         """Generate Redis key with prefix."""
