@@ -2,7 +2,6 @@
 import os
 import shlex
 import shutil
-import subprocess  # nosec: B404
 import sys
 from pathlib import Path
 from textwrap import dedent
@@ -160,7 +159,7 @@ def safety(session: Session) -> None:
             external=True,
         )
 
-    except (RuntimeError, subprocess.CalledProcessError):
+    except Exception:
         # Fallback for older Poetry versions or when plugin installation fails
         # Use pip freeze as a fallback method
         requirements_file = "requirements-export.txt"
