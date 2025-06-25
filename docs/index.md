@@ -11,11 +11,13 @@ end-before: <!-- github-only -->
 ```{toctree}
 ---
 hidden:
-maxdepth: 1
+maxdepth: 2
 ---
 
+getting_started
 usage
 reference
+redis_integration
 contributing
 Code of Conduct <codeofconduct>
 License <license>

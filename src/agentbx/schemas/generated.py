@@ -1,7 +1,7 @@
 # Auto-generated Pydantic models from YAML schemas
 # DO NOT EDIT - regenerate using SchemaGenerator
 
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Literal
 from pydantic import BaseModel, Field, validator
 from datetime import datetime
 import hashlib
@@ -14,7 +14,7 @@ class TargetDataBundle(BaseModel):
     """
     
     # Bundle metadata
-    bundle_type: str = Field(default="target_data", const=True)
+    bundle_type: Literal["target_data"] = "target_data"
     created_at: datetime = Field(default_factory=datetime.now)
     bundle_id: Optional[str] = None
     checksum: Optional[str] = None
@@ -80,7 +80,7 @@ class GradientDataBundle(BaseModel):
     """
     
     # Bundle metadata
-    bundle_type: str = Field(default="gradient_data", const=True)
+    bundle_type: Literal["gradient_data"] = "gradient_data"
     created_at: datetime = Field(default_factory=datetime.now)
     bundle_id: Optional[str] = None
     checksum: Optional[str] = None
@@ -133,7 +133,7 @@ class AtomicModelDataBundle(BaseModel):
     """
     
     # Bundle metadata
-    bundle_type: str = Field(default="atomic_model_data", const=True)
+    bundle_type: Literal["atomic_model_data"] = "atomic_model_data"
     created_at: datetime = Field(default_factory=datetime.now)
     bundle_id: Optional[str] = None
     checksum: Optional[str] = None
@@ -190,7 +190,7 @@ class ExperimentalDataBundle(BaseModel):
     """
     
     # Bundle metadata
-    bundle_type: str = Field(default="experimental_data", const=True)
+    bundle_type: Literal["experimental_data"] = "experimental_data"
     created_at: datetime = Field(default_factory=datetime.now)
     bundle_id: Optional[str] = None
     checksum: Optional[str] = None
@@ -262,7 +262,7 @@ class StructureFactorDataBundle(BaseModel):
     """
     
     # Bundle metadata
-    bundle_type: str = Field(default="structure_factor_data", const=True)
+    bundle_type: Literal["structure_factor_data"] = "structure_factor_data"
     created_at: datetime = Field(default_factory=datetime.now)
     bundle_id: Optional[str] = None
     checksum: Optional[str] = None
