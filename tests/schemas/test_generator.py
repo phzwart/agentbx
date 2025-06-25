@@ -1,11 +1,8 @@
 """Comprehensive tests for the schema generator module."""
 
-import json
-import shutil
 import tempfile
 from pathlib import Path
 from typing import Generator
-from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
@@ -14,7 +11,6 @@ import yaml
 from agentbx.schemas.generator import AssetDefinition
 from agentbx.schemas.generator import SchemaDefinition
 from agentbx.schemas.generator import SchemaGenerator
-from agentbx.schemas.generator import ValidationRule
 from agentbx.schemas.generator import WorkflowPattern
 from agentbx.schemas.generator import main
 from agentbx.schemas.generator import quick_generate

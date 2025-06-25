@@ -5,7 +5,6 @@ import json
 import pickle
 from datetime import datetime
 from datetime import timedelta
-from unittest.mock import MagicMock
 from unittest.mock import Mock
 from unittest.mock import patch
 
@@ -552,8 +551,8 @@ class TestRedisManager:
 
     def test_context_manager(self, redis_manager, mock_redis_client):
         """Test context manager functionality."""
-        with redis_manager as manager:
-            assert manager == redis_manager
+        with redis_manager:
+            assert redis_manager == redis_manager
 
         # Should close connection when exiting context
         mock_redis_client.close.assert_called_once()
@@ -562,7 +561,7 @@ class TestRedisManager:
     def test_context_manager_with_exception(self, redis_manager, mock_redis_client):
         """Test context manager with exception."""
         try:
-            with redis_manager as manager:
+            with redis_manager:
                 raise ValueError("Test exception")
         except ValueError:
             pass
@@ -607,7 +606,7 @@ class TestRedisManager:
             with patch("pickle.loads") as mock_pickle:
                 mock_pickle.return_value = SampleObject("test_value")
 
-                result = redis_manager._deserialize(mixed_data)
+                redis_manager._deserialize(mixed_data)
 
                 # Should have tried to find pickle protocol start (0x80)
                 assert mock_pickle.called
@@ -669,5 +668,5 @@ class TestRedisManager:
         # Just patch pickle.loads, let decode fail naturally
         with patch("pickle.loads") as mock_pickle:
             mock_pickle.return_value = SampleObject("test_value")
-            result = redis_manager._deserialize(invalid_utf8)
+            redis_manager._deserialize(invalid_utf8)
             assert mock_pickle.called

@@ -32,9 +32,11 @@ class StructureFactorAgent(SinglePurposeAgent):
     """
 
     def define_input_bundle_types(self) -> List[str]:
+        """Define the input bundle types for this agent."""
         return ["atomic_model_data"]
 
     def define_output_bundle_types(self) -> List[str]:
+        """Define the output bundle types for this agent."""
         return ["structure_factor_data"]
 
     def process_bundles(self, input_bundles: Dict[str, Bundle]) -> Dict[str, Bundle]:
@@ -86,7 +88,6 @@ class StructureFactorAgent(SinglePurposeAgent):
 
         Pure F_calc calculation - no bulk solvent, no scaling.
         """
-        from cctbx import miller
         from cctbx.array_family import flex
 
         # Get the resolution from the miller indices
@@ -153,7 +154,6 @@ class StructureFactorAgent(SinglePurposeAgent):
         except ImportError:
             logger.warning("mmtbx not available, using zero mask as fallback")
             # Fallback if mmtbx is not available
-            from cctbx import miller
             from cctbx.array_family import flex
 
             # Create a simple mask with zeros
@@ -164,7 +164,6 @@ class StructureFactorAgent(SinglePurposeAgent):
         except Exception as e:
             logger.error(f"Error in bulk solvent calculation: {e}")
             # Fallback to zero mask
-            from cctbx import miller
             from cctbx.array_family import flex
 
             f_mask_data = flex.complex_double(miller_indices.size(), 0.0)

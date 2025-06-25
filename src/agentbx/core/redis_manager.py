@@ -7,15 +7,11 @@ import json
 import logging
 import pickle  # nosec - Used only for internal trusted data
 from datetime import datetime
-from datetime import timedelta
 from typing import Any
-from typing import Dict
 from typing import Optional
-from typing import Union
 
 import redis
 from redis.exceptions import ConnectionError
-from redis.exceptions import RedisError
 
 
 logger = logging.getLogger(__name__)
@@ -170,7 +166,10 @@ class RedisManager:
             bundle_id: Optional custom ID, auto-generated if None
 
         Returns:
-            Bundle ID
+            str: Bundle ID
+
+        Raises:
+            ConnectionError: If Redis connection is not healthy.
         """
         if not self.is_healthy():
             raise ConnectionError("Redis connection is not healthy")
@@ -209,7 +208,11 @@ class RedisManager:
             bundle_id: Bundle ID to retrieve
 
         Returns:
-            Deserialized bundle object
+            Any: Deserialized bundle object
+
+        Raises:
+            ConnectionError: If Redis connection is not healthy.
+            KeyError: If bundle is not found in Redis.
         """
         if not self.is_healthy():
             raise ConnectionError("Redis connection is not healthy")
@@ -233,7 +236,10 @@ class RedisManager:
             bundle_id: ID of bundle to delete
 
         Returns:
-            True if deleted, False if not found
+            bool: True if deleted, False if not found
+
+        Raises:
+            ConnectionError: If Redis connection is not healthy.
         """
         if not self.is_healthy():
             raise ConnectionError("Redis connection is not healthy")
@@ -254,7 +260,10 @@ class RedisManager:
             bundle_type: Optional bundle type filter
 
         Returns:
-            List of bundle IDs
+            list[str]: List of bundle IDs
+
+        Raises:
+            ConnectionError: If Redis connection is not healthy.
         """
         if not self.is_healthy():
             raise ConnectionError("Redis connection is not healthy")

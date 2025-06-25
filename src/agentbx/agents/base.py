@@ -1,7 +1,8 @@
 # src/agentbx/agents/base.py
 """
-Base classes for single-responsibility agents.
-Each agent does ONE thing and does it well.
+Base classes for agentbx agents.
+
+This module provides the foundation for all agents in the agentbx system.
 """
 
 from abc import ABC
@@ -9,7 +10,6 @@ from abc import abstractmethod
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Optional
 
 from ..core.base_client import BaseClient
 from ..core.bundle_base import Bundle
@@ -34,12 +34,10 @@ class SinglePurposeAgent(BaseClient, ABC):
     @abstractmethod
     def define_input_bundle_types(self) -> List[str]:
         """Define what bundle types this agent requires as input."""
-        pass
 
     @abstractmethod
     def define_output_bundle_types(self) -> List[str]:
         """Define what bundle types this agent produces as output."""
-        pass
 
     @abstractmethod
     def process_bundles(self, input_bundles: Dict[str, Bundle]) -> Dict[str, Bundle]:
@@ -52,7 +50,6 @@ class SinglePurposeAgent(BaseClient, ABC):
         Returns:
             Dict mapping output_bundle_type -> Bundle
         """
-        pass
 
     def validate_inputs(self, input_bundles: Dict[str, Bundle]) -> bool:
         """Validate that required input bundles are present and valid."""

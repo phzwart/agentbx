@@ -3,9 +3,7 @@ Utilities for building and managing crystallographic workflows.
 """
 
 import logging
-from pathlib import Path
 from typing import Any
-from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -79,6 +77,9 @@ class WorkflowManager:
             agent_id: Agent ID
             input_bundle_types: Required input bundle types
             output_bundle_types: Expected output bundle types
+
+        Raises:
+            ValueError: If no current workflow exists.
         """
         if self.current_workflow is None:
             raise ValueError("No current workflow. Call create_workflow() first.")
@@ -106,7 +107,10 @@ class WorkflowManager:
             input_bundle_ids: Initial input bundle IDs
 
         Returns:
-            Final output bundle IDs
+            Dict[str, str]: Final output bundle IDs
+
+        Raises:
+            ValueError: If no current workflow exists.
         """
         if self.current_workflow is None:
             raise ValueError("No current workflow to execute.")
@@ -216,7 +220,7 @@ def create_simple_structure_factor_workflow(
     workflow_mgr = WorkflowManager(redis_manager)
 
     # Create workflow
-    workflow_id = workflow_mgr.create_workflow(
+    workflow_mgr.create_workflow(
         name="structure_factor_calculation",
         description="Calculate structure factors from atomic model",
     )

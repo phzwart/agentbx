@@ -3,17 +3,14 @@ Command-line interface for agentbx utilities.
 """
 
 import logging
-from pathlib import Path
 from typing import Optional
 
 import click
 
 from ..core.redis_manager import RedisManager
-from .crystallographic_utils import CrystallographicFileHandler
 from .crystallographic_utils import validate_crystallographic_files
 from .data_analysis_utils import analyze_bundle
 from .data_analysis_utils import print_analysis_summary
-from .workflow_utils import WorkflowManager
 
 
 logging.basicConfig(level=logging.INFO)
@@ -23,7 +20,6 @@ logger = logging.getLogger(__name__)
 @click.group()
 def cli() -> None:
     """Agentbx utilities command-line interface."""
-    pass
 
 
 @cli.command()

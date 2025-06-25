@@ -5,7 +5,6 @@ Base bundle class for agentbx data containers.
 import hashlib
 import json
 from abc import ABC
-from abc import abstractmethod
 from datetime import datetime
 from typing import Any
 from typing import Dict

@@ -120,7 +120,10 @@ class CrystallographicFileHandler:
             file_path: Path to file
 
         Returns:
-            Dictionary with file information
+            Dict[str, Any]: Dictionary with file information
+
+        Raises:
+            FileNotFoundError: If file does not exist.
         """
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -252,7 +255,11 @@ def _create_synthetic_miller_indices(xray_structure: Any, d_min: float = 2.0) ->
         d_min: Minimum resolution in Angstroms
 
     Returns:
-        CCTBX miller array with synthetic indices
+        Any: CCTBX miller array with synthetic indices
+
+    Raises:
+        ImportError: If CCTBX is not available.
+        RuntimeError: If synthetic data generation fails.
     """
     try:
         import random  # nosec - Used for generating synthetic test data

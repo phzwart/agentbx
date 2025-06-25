@@ -11,11 +11,9 @@ Does NOT know about:
 - Target functions
 """
 
-from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Optional
 
 from ..core.bundle_base import Bundle
 from .base import SinglePurposeAgent
@@ -29,9 +27,11 @@ class ExperimentalDataAgent(SinglePurposeAgent):
     """
 
     def define_input_bundle_types(self) -> List[str]:
+        """Define the input bundle types for this agent."""
         return ["raw_experimental_data"]
 
     def define_output_bundle_types(self) -> List[str]:
+        """Define the output bundle types for this agent."""
         return ["experimental_data"]
 
     def process_bundles(self, input_bundles: Dict[str, Bundle]) -> Dict[str, Bundle]:
@@ -124,7 +124,7 @@ class ExperimentalDataAgent(SinglePurposeAgent):
                 r_free_flags = server.get_miller_array(r_free_label)
                 if r_free_flags is not None:
                     r_free_flags = r_free_flags.as_bool()
-            except:
+            except Exception:
                 print(f"Warning: Could not read R_free flags from {r_free_label}")
 
         # Extract experimental metadata
@@ -279,6 +279,12 @@ class ExperimentalDataAgent(SinglePurposeAgent):
         """
         Convenience method to process an MTZ file directly.
 
+        Args:
+            mtz_file: Path to MTZ file
+            f_obs_label: Label for observed structure factor amplitudes
+            sigma_label: Label for sigma values
+            r_free_label: Label for R-free flags
+
         Returns:
             Bundle ID for the created experimental_data bundle
         """
@@ -303,6 +309,11 @@ class ExperimentalDataAgent(SinglePurposeAgent):
     ) -> str:
         """
         Convenience method to process intensity data (will apply French-Wilson).
+
+        Args:
+            hkl_file: Path to HKL file
+            i_obs_label: Label for observed intensities
+            sigma_label: Label for sigma values
 
         Returns:
             Bundle ID for the created experimental_data bundle
@@ -331,7 +342,7 @@ class ExperimentalDataAgent(SinglePurposeAgent):
         f_obs = exp_bundle.get_asset("f_obs")
         sigmas = exp_bundle.get_asset("sigmas")
         r_free_flags = exp_bundle.get_asset("r_free_flags")
-        metadata = exp_bundle.get_asset("experimental_metadata")
+        exp_bundle.get_asset("experimental_metadata")
 
         quality_metrics = {
             "n_reflections": f_obs.size(),

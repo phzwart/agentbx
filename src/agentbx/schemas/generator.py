@@ -1,25 +1,18 @@
 # src/agentbx/schemas/generator.py
 """
-Converts YAML schema definitions to Pydantic models.
-This allows us to define schemas in human-readable YAML and get full type safety.
+Schema generator for agentbx.
+
+This module generates Pydantic schemas from YAML definitions.
 """
 
-import hashlib
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Literal
 from typing import Optional
-from typing import Union
-from typing import get_type_hints
 
 import yaml
 from pydantic import BaseModel
-from pydantic import Field
-from pydantic import ValidationError
-from pydantic import validator
 
 
 class AssetDefinition(BaseModel):
@@ -120,7 +113,9 @@ class SchemaGenerator:
                         print(f"     ✅ {asset_name}")
                     except Exception as e:
                         print(
-                            f"     ❌ Error creating AssetDefinition for {asset_name}: {e}"
+                            "     ❌ Error creating AssetDefinition for {}: {}".format(
+                                asset_name, e
+                            )
                         )
                         continue
 
@@ -132,14 +127,18 @@ class SchemaGenerator:
                 if isinstance(workflow_patterns_raw, dict):
                     for pattern_name, pattern_data in workflow_patterns_raw.items():
                         print(
-                            f"     🔍 Processing pattern '{pattern_name}': {type(pattern_data)}"
+                            "     🔍 Processing pattern '{}': {}".format(
+                                pattern_name, type(pattern_data)
+                            )
                         )
                         if pattern_data is None:
                             pattern_data = {}
                         # Handle different workflow pattern structures
                         if isinstance(pattern_data, list):
                             print(
-                                f"       🔄 Converting list to dict for {pattern_name}"
+                                "       🔄 Converting list to dict for {}".format(
+                                    pattern_name
+                                )
                             )
                             # Convert list format to dict format
                             combined_data = {"pattern_name": pattern_name}
@@ -156,13 +155,23 @@ class SchemaGenerator:
                                             '"'
                                         )
                             pattern_data = combined_data
-                            print(f"       ✅ Converted to: {list(pattern_data.keys())}")
+                            print(
+                                "       ✅ Converted to: {}".format(
+                                    list(pattern_data.keys())
+                                )
+                            )
                         elif isinstance(pattern_data, dict):
                             pattern_data["pattern_name"] = pattern_name
-                            print(f"       ✅ Dict format: {list(pattern_data.keys())}")
+                            print(
+                                "       ✅ Dict format: {}".format(
+                                    list(pattern_data.keys())
+                                )
+                            )
                         else:
                             print(
-                                f"       ⚠️ Unexpected pattern_data type: {type(pattern_data)}"
+                                "       ⚠️ Unexpected pattern_data type: {}".format(
+                                    type(pattern_data)
+                                )
                             )
                             continue
                         try:
@@ -172,13 +181,17 @@ class SchemaGenerator:
                             print(f"     ✅ {pattern_name}")
                         except Exception as e:
                             print(
-                                f"     ❌ Error creating WorkflowPattern for {pattern_name}: {e}"
+                                "     ❌ Error creating WorkflowPattern for {}: {}".format(
+                                    pattern_name, e
+                                )
                             )
                             print(f"        Pattern data: {pattern_data}")
                             continue
                 else:
                     print(
-                        f"⚠️ Unexpected workflow_patterns type: {type(workflow_patterns_raw)} (should be dict)"
+                        "⚠️ Unexpected workflow_patterns type: {} (should be dict)".format(
+                            type(workflow_patterns_raw)
+                        )
                     )
 
             # Handle validation_rules safely
@@ -192,7 +205,9 @@ class SchemaGenerator:
             if isinstance(validation_rules, dict):
                 for asset_name, rules in validation_rules.items():
                     print(
-                        f"     🔍 Processing validation for '{asset_name}': {type(rules)}"
+                        "     🔍 Processing validation for '{}': {}".format(
+                            asset_name, type(rules)
+                        )
                     )
                     if isinstance(rules, list):
                         print(f"       🔄 Converting list to dict for {asset_name}")
@@ -202,24 +217,36 @@ class SchemaGenerator:
                             if isinstance(rule_item, dict):
                                 combined_rules.update(rule_item)
                                 print(
-                                    f"         📝 Added rules: {list(rule_item.keys())}"
+                                    "         📝 Added rules: {}".format(
+                                        list(rule_item.keys())
+                                    )
                                 )
                             elif isinstance(rule_item, str):
                                 # Handle simple string rules
                                 combined_rules[rule_item] = True
                                 print(f"         📝 Added string rule: {rule_item}")
                         normalized_validation_rules[asset_name] = combined_rules
-                        print(f"       ✅ Final rules: {list(combined_rules.keys())}")
+                        print(
+                            "       ✅ Final rules: {}".format(
+                                list(combined_rules.keys())
+                            )
+                        )
                     elif isinstance(rules, dict):
                         normalized_validation_rules[asset_name] = rules
                         print(f"       ✅ Dict format: {list(rules.keys())}")
                     else:
                         print(
-                            f"       ⚠️ Unexpected validation rule format: {type(rules)}"
+                            "Warning: Expected dict for validation rules, got {} for {}".format(
+                                type(rules), asset_name
+                            )
                         )
 
             validation_rules = normalized_validation_rules
-            print(f"   ✅ Validation rules processed: {list(validation_rules.keys())}")
+            print(
+                "   ✅ Validation rules processed: {}".format(
+                    list(validation_rules.keys())
+                )
+            )
 
             # Create the full schema definition
             print("   🔧 Creating SchemaDefinition...")
@@ -236,7 +263,7 @@ class SchemaGenerator:
             }
 
             schema = SchemaDefinition(**schema_data)
-            print(f"   ✅ SchemaDefinition created successfully")
+            print("   ✅ SchemaDefinition created successfully")
             return schema
 
         except Exception as e:
@@ -298,14 +325,18 @@ class SchemaGenerator:
         if asset_def.valid_range:
             if python_type == "float":
                 field_kwargs.append(
-                    f"ge={asset_def.valid_range[0]}, le={asset_def.valid_range[1]}"
+                    "ge={}, le={}".format(
+                        asset_def.valid_range[0], asset_def.valid_range[1]
+                    )
                 )
 
         if asset_def.default_values and len(asset_def.default_values) == 1:
             default_val = list(asset_def.default_values.values())[0]
             field_kwargs.append(f"default={repr(default_val)}")
 
-        field_def = f"Field({', '.join(field_kwargs)})" if field_kwargs else "..."
+        field_def = (
+            "Field({})".format(", ".join(field_kwargs)) if field_kwargs else "..."
+        )
 
         return f"    {asset_name}: {python_type} = {field_def}"
 
@@ -322,7 +353,7 @@ class SchemaGenerator:
 
                     validator_lines = [
                         f"    @field_validator('{asset_name}')",
-                        f"    @classmethod",
+                        "    @classmethod",
                         f"    def validate_{asset_name}(cls, v):",
                         f'        """Validate {asset_def.description}"""',
                     ]
@@ -377,7 +408,9 @@ class SchemaGenerator:
                                 )
                     else:
                         print(
-                            f"Warning: Expected dict for validation rules, got {type(rules)} for {asset_name}"
+                            "Warning: Expected dict for validation rules, got {} for {}".format(
+                                type(rules), asset_name
+                            )
                         )
 
                     validator_lines.append("        return v")
@@ -390,22 +423,24 @@ class SchemaGenerator:
     def generate_bundle_model(self, schema: SchemaDefinition) -> str:
         """Generate a complete Pydantic model for a bundle type."""
 
-        class_name = f"{schema.task_type.title().replace('_', '')}Bundle"
+        class_name = "{}Bundle".format(schema.task_type.title().replace("_", ""))
 
         lines = [
             f"class {class_name}(BaseModel):",
-            f'    """',
+            '    """',
             f"    {schema.description}",
-            f"    ",
+            "    ",
             f"    Generated from {schema.task_type}.yaml",
-            f'    """',
-            f"    ",
-            f"    # Bundle metadata",
-            f'    bundle_type: Literal["{schema.task_type}"] = "{schema.task_type}"',
-            f"    created_at: datetime = Field(default_factory=datetime.now)",
-            f"    bundle_id: Optional[str] = None",
-            f"    checksum: Optional[str] = None",
-            f"    ",
+            '    """',
+            "    ",
+            "    # Bundle metadata",
+            '    bundle_type: Literal["{}"] = "{}"'.format(
+                schema.task_type, schema.task_type
+            ),
+            "    created_at: datetime = Field(default_factory=datetime.now)",
+            "    bundle_id: Optional[str] = None",
+            "    checksum: Optional[str] = None",
+            "    ",
         ]
 
         # Add required assets
@@ -451,7 +486,9 @@ class SchemaGenerator:
                 "",
                 "    def validate_dependencies(self, available_bundles: Dict[str, 'BaseModel']) -> bool:",
                 '        """Validate that all dependencies are satisfied."""',
-                f"        required_deps: List[str] = {schema.dependencies or []}",
+                "        required_deps: List[str] = {} or []".format(
+                    schema.dependencies
+                ),
                 "        for dep in required_deps:",
                 "            if dep not in available_bundles:",
                 "                raise ValueError(f'Missing dependency: {dep}')",
@@ -560,7 +597,9 @@ def main() -> int:
             required_count = len(schema.required_assets)
             optional_count = len(schema.optional_assets or [])
             print(
-                f"   - {schema_name} ({required_count} required, {optional_count} optional assets)"
+                "   - {} ({}, {} optional assets)".format(
+                    schema_name, required_count, optional_count
+                )
             )
 
         # Generate and write models
@@ -616,7 +655,11 @@ def watch_for_changes(
                         return
                     self.last_regeneration = now
 
-                    print(f"\n🔄 {Path(event.src_path).name} changed, regenerating...")
+                    print(
+                        "\n🔄 {} changed, regenerating...".format(
+                            Path(event.src_path).name
+                        )
+                    )
                     try:
                         self.generator.schemas.clear()
                         self.generator.load_all_schemas()

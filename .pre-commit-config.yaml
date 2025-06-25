@@ -51,6 +51,7 @@ repos:
         language: system
         types: [python]
         stages: [manual]
+        args: [--docstring-style=short]
       - id: flake8
         name: flake8
         entry: flake8
@@ -72,6 +73,6 @@ repos:
         types: [python]
         args: [--py37-plus]
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.6.0
+    rev: v4.0.0-alpha.8
     hooks:
       - id: prettier

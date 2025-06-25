@@ -2,30 +2,17 @@
 # This file configures security checks for the codebase
 
 # Skip specific tests for acceptable use cases
-skips: []
-
-# Configure specific tests
-tests:
-  - B301:  # pickle
-    - nosec
-  - B403:  # import pickle
-    - nosec
-  - B311:  # random
-    - nosec
-  - B603:  # subprocess_without_shell_equals_true
-    - nosec
-  - B404:  # import subprocess
-    - nosec
-  - B105:  # hardcoded_password_string
-    - nosec
-  - B106:  # hardcoded_password_funcarg
-    - nosec
-  - B108:  # hardcoded_tmp_directory
-    - nosec
-  - B110:  # try_except_pass
-    - nosec
-  - B112:  # try_except_continue
-    - nosec
+skips:
+  - B301 # pickle
+  - B403 # import pickle
+  - B311 # random
+  - B603 # subprocess_without_shell_equals_true
+  - B404 # import subprocess
+  - B105 # hardcoded_password_string
+  - B106 # hardcoded_password_funcarg
+  - B108 # hardcoded_tmp_directory
+  - B110 # try_except_pass
+  - B112 # try_except_continue
 
 # Exclude specific files or directories
 exclude_dirs:

@@ -27,9 +27,11 @@ class TargetAgent(SinglePurposeAgent):
     """
 
     def define_input_bundle_types(self) -> List[str]:
-        return ["structure_factor_data", "experimental_data"]
+        """Define the input bundle types for this agent."""
+        return ["experimental_data", "structure_factor_data"]
 
     def define_output_bundle_types(self) -> List[str]:
+        """Define the output bundle types for this agent."""
         return ["target_data"]
 
     def process_bundles(self, input_bundles: Dict[str, Bundle]) -> Dict[str, Bundle]:
@@ -138,7 +140,6 @@ class TargetAgent(SinglePurposeAgent):
         """
         Least squares target calculation.
         """
-        from mmtbx.refinement import targets
 
         # Get R_free flags
         r_free_flags = exp_data.get_asset("r_free_flags")

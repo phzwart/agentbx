@@ -13,7 +13,6 @@ from ..core.redis_manager import RedisManager
 @click.group()
 def redis_cli() -> None:
     """Redis management utilities for agentbx."""
-    pass
 
 
 @redis_cli.command()

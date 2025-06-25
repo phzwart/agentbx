@@ -24,9 +24,11 @@ class GradientAgent(SinglePurposeAgent):
     """
 
     def define_input_bundle_types(self) -> List[str]:
+        """Define the input bundle types for this agent."""
         return ["structure_factor_data", "target_data", "atomic_model_data"]
 
     def define_output_bundle_types(self) -> List[str]:
+        """Define the output bundle types for this agent."""
         return ["gradient_data"]
 
     def process_bundles(self, input_bundles: Dict[str, Bundle]) -> Dict[str, Bundle]:
@@ -79,13 +81,12 @@ class GradientAgent(SinglePurposeAgent):
         """
         Calculate dF/dx - structure factor gradients w.r.t. coordinates.
         """
-        from cctbx.examples import structure_factor_derivatives
 
         xray_structure = atomic_data.get_asset("xray_structure")
         miller_indices = sf_data.get_asset("miller_indices")
 
         # Get current structure factors
-        f_calc = sf_data.get_asset("f_calc")
+        sf_data.get_asset("f_calc")
 
         # Calculate gradients of structure factors w.r.t. atomic coordinates
         # This uses CCTBX's automatic differentiation
@@ -106,6 +107,9 @@ class GradientAgent(SinglePurposeAgent):
         Args:
             dt_df: Gradients w.r.t. structure factors (complex array)
             df_dx: Gradients of structure factors w.r.t. coordinates
+
+        Returns:
+            Coordinate gradients for each atom
         """
         from cctbx.array_family import flex
 
@@ -164,7 +168,6 @@ class GradientAgent(SinglePurposeAgent):
         """
         # Implementation would perturb coordinates slightly and
         # compute numerical derivatives for comparison
-        pass
 
     def get_computation_info(self) -> Dict[str, Any]:
         """Return information about this agent's computation."""
