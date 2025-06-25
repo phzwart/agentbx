@@ -2,7 +2,7 @@
 # DO NOT EDIT - regenerate using SchemaGenerator
 
 from typing import Dict, List, Optional, Any, Literal
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 import hashlib
 
@@ -30,22 +30,26 @@ class TargetDataBundle(BaseModel):
     target_gradients_wrt_sf: Any = Field(default=None, description="Gradients of target w.r.t structure factors")
     target_metadata: Dict[str, Any] = Field(default=None, description="Target computation metadata")
 
-    @validator('target_value')
+    @field_validator('target_value')
+    @classmethod
     def validate_target_value(cls, v):
         """Validate Scalar target function value"""
         return v
 
-    @validator('r_factors')
+    @field_validator('r_factors')
+    @classmethod
     def validate_r_factors(cls, v):
         """Validate Crystallographic R-factors"""
         return v
 
-    @validator('likelihood_parameters')
+    @field_validator('likelihood_parameters')
+    @classmethod
     def validate_likelihood_parameters(cls, v):
         """Validate Maximum likelihood alpha and beta parameters"""
         return v
 
-    @validator('target_gradients_wrt_sf')
+    @field_validator('target_gradients_wrt_sf')
+    @classmethod
     def validate_target_gradients_wrt_sf(cls, v):
         """Validate Gradients of target w.r.t structure factors"""
         if not hasattr(v, 'indices'):
@@ -94,17 +98,20 @@ class GradientDataBundle(BaseModel):
     structure_factor_gradients: Any = Field(default=None, description="Intermediate: gradients w.r.t. structure factors dT/dF")
     gradient_metadata: Dict[str, Any] = Field(default=None, description="Gradient computation information")
 
-    @validator('coordinate_gradients')
+    @field_validator('coordinate_gradients')
+    @classmethod
     def validate_coordinate_gradients(cls, v):
         """Validate Gradients w.r.t. atomic coordinates: dT/d(xyz)"""
         return v
 
-    @validator('bfactor_gradients')
+    @field_validator('bfactor_gradients')
+    @classmethod
     def validate_bfactor_gradients(cls, v):
         """Validate Gradients w.r.t. B-factors: dT/d(B)"""
         return v
 
-    @validator('occupancy_gradients')
+    @field_validator('occupancy_gradients')
+    @classmethod
     def validate_occupancy_gradients(cls, v):
         """Validate Gradients w.r.t. occupancies: dT/d(occ)"""
         return v
@@ -147,7 +154,8 @@ class AtomicModelDataBundle(BaseModel):
     anisotropic_scaling_params: Dict[str, Any] = Field(default=None, description="Anisotropic scaling parameters")
     model_metadata: Dict[str, Any] = Field(default=None, description="Model provenance and quality info")
 
-    @validator('xray_structure')
+    @field_validator('xray_structure')
+    @classmethod
     def validate_xray_structure(cls, v):
         """Validate CCTBX xray.structure object with atomic model"""
         if not hasattr(v, 'scatterers'):
@@ -156,12 +164,14 @@ class AtomicModelDataBundle(BaseModel):
             raise ValueError('xray_structure must have unit_cell')
         return v
 
-    @validator('miller_indices')
+    @field_validator('miller_indices')
+    @classmethod
     def validate_miller_indices(cls, v):
         """Validate Miller indices for structure factor calculation"""
         return v
 
-    @validator('bulk_solvent_params')
+    @field_validator('bulk_solvent_params')
+    @classmethod
     def validate_bulk_solvent_params(cls, v):
         """Validate Bulk solvent correction parameters"""
         return v
@@ -207,35 +217,40 @@ class ExperimentalDataBundle(BaseModel):
     experimental_metadata: Dict[str, Any] = Field(default=None, description="Experimental conditions and data collection info")
     target_preferences: Dict[str, Any] = Field(default=None, description="Preferred target function for this dataset")
 
-    @validator('f_obs')
+    @field_validator('f_obs')
+    @classmethod
     def validate_f_obs(cls, v):
         """Validate Observed structure factor amplitudes"""
         if not hasattr(v, 'indices'):
             raise ValueError('miller_array must have indices')
         if not hasattr(v, 'data'):
             raise ValueError('miller_array must have data')
-        if (v.data() < 0).count(True) > 0:
-            raise ValueError('miller_array data must be positive')
+        if not v.is_real_array():
+            raise ValueError('miller_array must be real')
         return v
 
-    @validator('r_free_flags')
+    @field_validator('r_free_flags')
+    @classmethod
     def validate_r_free_flags(cls, v):
         """Validate Free R flags for cross-validation"""
         if not hasattr(v, 'indices'):
             raise ValueError('miller_array must have indices')
         if not hasattr(v, 'data'):
             raise ValueError('miller_array must have data')
+        if not v.is_bool_array():
+            raise ValueError('miller_array must be boolean')
         return v
 
-    @validator('sigmas')
+    @field_validator('sigmas')
+    @classmethod
     def validate_sigmas(cls, v):
         """Validate Uncertainties in observed structure factors"""
         if not hasattr(v, 'indices'):
             raise ValueError('miller_array must have indices')
         if not hasattr(v, 'data'):
             raise ValueError('miller_array must have data')
-        if (v.data() < 0).count(True) > 0:
-            raise ValueError('miller_array data must be positive')
+        if not v.is_real_array():
+            raise ValueError('miller_array must be real')
         return v
 
     def calculate_checksum(self) -> str:
@@ -277,7 +292,8 @@ class StructureFactorDataBundle(BaseModel):
     scale_factors: Dict[str, Any] = Field(default=None, description="Scaling parameters used in structure factor calculation")
     computation_info: Dict[str, Any] = Field(default=None, description="Metadata about structure factor calculation")
 
-    @validator('f_calc')
+    @field_validator('f_calc')
+    @classmethod
     def validate_f_calc(cls, v):
         """Validate Calculated structure factors from atomic model"""
         if not hasattr(v, 'indices'):
@@ -286,12 +302,10 @@ class StructureFactorDataBundle(BaseModel):
             raise ValueError('miller_array must have data')
         if not v.is_complex_array():
             raise ValueError('miller_array must be complex')
-        import numpy as np
-        if hasattr(v, 'data') and not np.all(np.isfinite(v.data())):
-            raise ValueError('All values must be finite')
         return v
 
-    @validator('f_mask')
+    @field_validator('f_mask')
+    @classmethod
     def validate_f_mask(cls, v):
         """Validate Structure factors from bulk solvent mask"""
         if not hasattr(v, 'indices'):
@@ -302,7 +316,8 @@ class StructureFactorDataBundle(BaseModel):
             raise ValueError('miller_array must be complex')
         return v
 
-    @validator('f_model')
+    @field_validator('f_model')
+    @classmethod
     def validate_f_model(cls, v):
         """Validate Combined structure factors: scale * (f_calc + k_sol * f_mask)"""
         if not hasattr(v, 'indices'):
@@ -313,7 +328,8 @@ class StructureFactorDataBundle(BaseModel):
             raise ValueError('miller_array must be complex')
         return v
 
-    @validator('scale_factors')
+    @field_validator('scale_factors')
+    @classmethod
     def validate_scale_factors(cls, v):
         """Validate Scaling parameters used in structure factor calculation"""
         return v
