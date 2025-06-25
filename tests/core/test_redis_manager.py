@@ -555,4 +555,95 @@ class TestRedisManager:
         
         # Should still close connection even with exception
         mock_redis_client.close.assert_called_once()
-        assert redis_manager._redis_client is None 
+        assert redis_manager._redis_client is None
+
+    def test_test_connection_success_with_logging(self):
+        """Test successful connection test with logging."""
+        with patch('redis.ConnectionPool'):
+            with patch('redis.Redis') as mock_redis:
+                mock_client = Mock()
+                mock_redis.return_value = mock_client
+                mock_client.ping.return_value = True
+                
+                with patch('agentbx.core.redis_manager.logger') as mock_logger:
+                    manager = RedisManager()
+                    # Reset the client to force recreation
+                    manager._redis_client = None
+                    mock_client.ping.reset_mock()
+                    result = manager._test_connection()
+                    
+                    assert result is True
+                    mock_client.ping.assert_called_once()
+                    # The logger.info is called twice - once during init and once during _test_connection
+                    assert mock_logger.info.call_count >= 1
+
+    def test_deserialize_pickle_fallback_complex_scenario(self, redis_manager):
+        """Test the complex pickle fallback logic in _deserialize."""
+        # Create data that starts with JSON-like content but contains pickle data
+        # This triggers the fallback logic in lines 149-152
+        json_start = b'{"invalid": "json"'
+        pickle_data = pickle.dumps(SampleObject("test_value"))
+        mixed_data = json_start + pickle_data
+        
+        # Mock json.loads to fail first, then succeed for the fallback
+        with patch('json.loads', side_effect=[json.JSONDecodeError("", "", 0), {"test": "data"}]):
+            with patch('pickle.loads') as mock_pickle:
+                mock_pickle.return_value = SampleObject("test_value")
+                
+                result = redis_manager._deserialize(mixed_data)
+                
+                # Should have tried to find pickle protocol start (0x80)
+                assert mock_pickle.called
+
+    def test_deserialize_pickle_fallback_with_exception(self, redis_manager):
+        """Test pickle fallback when pickle.loads raises exception."""
+        # Create data that triggers the fallback logic
+        json_start = b'{"invalid": "json"'
+        pickle_data = pickle.dumps(SampleObject("test_value"))
+        mixed_data = json_start + pickle_data
+        
+        # Mock json.loads to fail
+        with patch('json.loads', side_effect=json.JSONDecodeError("", "", 0)):
+            # Mock pickle.loads to fail first, then succeed
+            with patch('pickle.loads', side_effect=[Exception("Pickle error"), SampleObject("test_value")]):
+                result = redis_manager._deserialize(mixed_data)
+                
+                # Should fall back to unpickling the whole thing
+                assert isinstance(result, SampleObject)
+
+    def test_cache_get_with_exception_and_logging(self, redis_manager, mock_redis_client):
+        """Test cache_get when Redis operations raise exceptions."""
+        mock_redis_client.get.side_effect = RedisError("Redis connection error")
+        
+        with patch('agentbx.core.redis_manager.logger') as mock_logger:
+            result = redis_manager.cache_get("test_key")
+            
+            assert result is None
+            mock_logger.warning.assert_called_once()
+            # Check that the warning message contains the key
+            warning_call = mock_logger.warning.call_args[0][0]
+            assert "test_key" in warning_call
+
+    def test_cache_set_with_exception_and_logging(self, redis_manager, mock_redis_client):
+        """Test cache_set when Redis operations raise exceptions."""
+        mock_redis_client.setex.side_effect = RedisError("Redis connection error")
+        
+        with patch('agentbx.core.redis_manager.logger') as mock_logger:
+            result = redis_manager.cache_set("test_key", "test_value")
+            
+            assert result is False
+            mock_logger.warning.assert_called_once()
+            # Check that the warning message contains the key
+            warning_call = mock_logger.warning.call_args[0][0]
+            assert "test_key" in warning_call
+
+    def test_deserialize_unicode_decode_error_fallback(self, redis_manager):
+        """Test deserialization when UnicodeDecodeError occurs."""
+        # Create data that will cause UnicodeDecodeError
+        invalid_utf8 = b'\xff\xfe\xfd'  # Invalid UTF-8 sequence
+        
+        # Just patch pickle.loads, let decode fail naturally
+        with patch('pickle.loads') as mock_pickle:
+            mock_pickle.return_value = SampleObject("test_value")
+            result = redis_manager._deserialize(invalid_utf8)
+            assert mock_pickle.called 
