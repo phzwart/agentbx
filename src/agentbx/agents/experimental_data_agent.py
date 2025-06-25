@@ -152,45 +152,31 @@ class ExperimentalDataAgent(SinglePurposeAgent):
         self, reflection_file: Any, file_path: str
     ) -> Dict[str, Any]:
         """
-        Extract experimental metadata from reflection file.
+        Extract metadata from reflection file.
         """
         metadata = {
             "file_path": file_path,
-            "file_type": Path(file_path).suffix.lower(),
+            "file_type": "mtz",  # Default assumption
+            "space_group": str(reflection_file.space_group_info()),
+            "unit_cell": str(reflection_file.unit_cell()),
+            "wavelength": 1.0,  # Default
+            "temperature": "unknown",
         }
 
-        # Extract crystal symmetry
-        crystal_symmetry = reflection_file.file_content().crystal_symmetry()
-        if crystal_symmetry:
-            metadata.update(
-                {
-                    "space_group": str(crystal_symmetry.space_group_info()),
-                    "unit_cell": crystal_symmetry.unit_cell().parameters(),
-                }
-            )
-
-        # Extract resolution information
+        # Try to extract wavelength from file
         try:
-            miller_arrays = reflection_file.file_content().miller_arrays()
-            if miller_arrays:
-                d_max_min = miller_arrays[0].d_max_min()
-                metadata.update(
-                    {
-                        "resolution_range": d_max_min,
-                        "d_min": d_max_min[1],
-                        "d_max": d_max_min[0],
-                    }
-                )
-        except:
+            wavelength = reflection_file.wavelength()
+            if wavelength is not None:
+                metadata["wavelength"] = wavelength
+        except Exception:
             pass
 
-        # Try to extract wavelength and other experimental info
+        # Try to extract temperature from file
         try:
-            # This would depend on file format specifics
-            metadata["collection_date"] = "unknown"
-            metadata["wavelength"] = "unknown"
-            metadata["temperature"] = "unknown"
-        except:
+            temperature = reflection_file.temperature()
+            if temperature is not None:
+                metadata["temperature"] = temperature
+        except Exception:
             pass
 
         return metadata
@@ -261,9 +247,12 @@ class ExperimentalDataAgent(SinglePurposeAgent):
 
     def _generate_r_free_flags(self, f_obs: Any, fraction: float = 0.05) -> Any:
         """
-        Generate R_free flags for cross-validation.
+        Generate R-free flags for cross-validation.
+
+        Note: Uses random.sample for non-cryptographic purposes (R-free flag generation).
+        This is acceptable as it's not used for security purposes.
         """
-        import random
+        import random  # nosec - Used for non-cryptographic R-free flag generation
 
         from cctbx.array_family import flex
 
@@ -272,7 +261,7 @@ class ExperimentalDataAgent(SinglePurposeAgent):
 
         # Create random free flags
         flags = flex.bool(n_reflections, False)
-        free_indices = random.sample(range(n_reflections), n_free)
+        free_indices = random.sample(range(n_reflections), n_free)  # nosec
 
         for i in free_indices:
             flags[i] = True

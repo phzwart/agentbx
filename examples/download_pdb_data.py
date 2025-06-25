@@ -126,7 +126,7 @@ class PDBDownloader:
         """
         try:
             # Import CCTBX modules for synthetic data generation
-            import random
+            import random  # nosec - Used for generating synthetic test data
 
             from cctbx import crystal
             from cctbx import miller
@@ -155,7 +155,9 @@ class PDBDownloader:
             f_obs_data = flex.double(miller_set.size())
             for i in range(miller_set.size()):
                 # Generate realistic structure factor amplitudes
-                f_obs_data[i] = random.uniform(0.1, 100.0)
+                f_obs_data[i] = random.uniform(
+                    0.1, 100.0
+                )  # nosec - Synthetic test data
 
             # Create miller array
             f_obs = miller_set.array(data=f_obs_data)

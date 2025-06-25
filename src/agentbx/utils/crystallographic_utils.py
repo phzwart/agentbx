@@ -255,7 +255,7 @@ def _create_synthetic_miller_indices(xray_structure: Any, d_min: float = 2.0) ->
         CCTBX miller array with synthetic indices
     """
     try:
-        import random
+        import random  # nosec - Used for generating synthetic test data
 
         from cctbx import crystal
         from cctbx import miller
@@ -277,7 +277,7 @@ def _create_synthetic_miller_indices(xray_structure: Any, d_min: float = 2.0) ->
         # Generate synthetic F_obs data
         f_obs_data = flex.double(miller_set.size())
         for i in range(miller_set.size()):
-            f_obs_data[i] = random.uniform(0.1, 100.0)
+            f_obs_data[i] = random.uniform(0.1, 100.0)  # nosec - Synthetic test data
 
         # Create miller array
         f_obs = miller_set.array(data=f_obs_data)

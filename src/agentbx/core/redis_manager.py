@@ -5,7 +5,7 @@ Redis manager for agentbx - handles connections, serialization, and caching.
 import hashlib
 import json
 import logging
-import pickle
+import pickle  # nosec - Used only for internal trusted data
 from datetime import datetime
 from datetime import timedelta
 from typing import Any
@@ -65,88 +65,73 @@ class RedisManager:
         self.port = port
         self.db = db
         self.password = password
-        self.default_ttl = default_ttl
+        self.max_connections = max_connections
+        self.socket_timeout = socket_timeout
+        self.socket_connect_timeout = socket_connect_timeout
+        self.retry_on_timeout = retry_on_timeout
         self.health_check_interval = health_check_interval
-        self.last_health_check: Optional[datetime] = None
+        self.default_ttl = default_ttl
 
-        # Connection pool configuration
-        self.pool = redis.ConnectionPool(
-            host=host,
-            port=port,
-            db=db,
-            password=password,
-            max_connections=max_connections,
-            socket_timeout=socket_timeout,
-            socket_connect_timeout=socket_connect_timeout,
-            retry_on_timeout=retry_on_timeout,
-            decode_responses=False,  # We handle encoding ourselves
-        )
-
-        self._redis_client: Optional[redis.Redis] = None
-        self._test_connection()
+        self._pool = None
+        self._last_health_check = 0
+        self._is_healthy = False
 
     def _get_client(self) -> redis.Redis:
-        """Get Redis client, creating if necessary."""
-        if self._redis_client is None:
-            self._redis_client = redis.Redis(connection_pool=self.pool)
-        return self._redis_client
+        """Get Redis client from connection pool."""
+        if self._pool is None:
+            self._pool = redis.ConnectionPool(
+                host=self.host,
+                port=self.port,
+                db=self.db,
+                password=self.password,
+                max_connections=self.max_connections,
+                socket_timeout=self.socket_timeout,
+                socket_connect_timeout=self.socket_connect_timeout,
+                retry_on_timeout=self.retry_on_timeout,
+            )
+        return redis.Redis(connection_pool=self._pool)
 
     def _test_connection(self) -> bool:
-        """Test Redis connection and log status."""
+        """Test Redis connection."""
         try:
             client = self._get_client()
             client.ping()
-            logger.info(f"Redis connection established to {self.host}:{self.port}")
             return True
-        except (ConnectionError, RedisError) as e:
-            logger.error(f"Failed to connect to Redis at {self.host}:{self.port}: {e}")
+        except Exception as e:
+            logger.warning(f"Redis connection test failed: {e}")
             return False
 
     def is_healthy(self) -> bool:
         """Check if Redis connection is healthy."""
-        now = datetime.now()
-        if (
-            self.last_health_check is None
-            or (now - self.last_health_check).total_seconds()
-            > self.health_check_interval
-        ):
-            try:
-                client = self._get_client()
-                client.ping()
-                self.last_health_check = now
-                return True
-            except (ConnectionError, RedisError):
-                return False
-        return True
+        now = datetime.now().timestamp()
+        if now - self._last_health_check > self.health_check_interval:
+            self._is_healthy = self._test_connection()
+            self._last_health_check = now
+        return self._is_healthy
 
     def _serialize(self, obj: Any) -> bytes:
         """
-        Serialize object to bytes for Redis storage.
+        Serialize object to bytes.
 
-        Handles:
-        - Basic Python types (str, int, float, bool, None)
-        - Lists, tuples, dicts
-        - Complex objects (pickle)
+        Uses JSON for simple types, base64-encoded pickle for complex objects.
+        Note: Pickle is used only for internal trusted data, not user input.
         """
-        if obj is None:
-            return b"null"
-        elif isinstance(obj, (str, int, float, bool)):
+        try:
+            # Try JSON first for simple types
             return json.dumps(obj).encode("utf-8")
-        elif isinstance(obj, (list, tuple, dict)):
-            return json.dumps(obj, default=str).encode("utf-8")
-        else:
-            # Use pickle for complex objects (CCTBX objects, etc.)
-            return pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)
+        except (TypeError, ValueError):
+            # Fall back to pickle for complex objects (internal trusted data only)
+            # nosec - pickle is used only for internal trusted data
+            return pickle.dumps(obj)
 
     def _deserialize(self, data: bytes) -> Any:
         """
-        Deserialize bytes from Redis back to Python object.
+        Deserialize bytes to object.
 
-        Handles the reverse of _serialize.
+        Tries JSON first, falls back to pickle for complex objects.
+        Note: Pickle is used only for internal trusted data, not user input.
         """
-        if data == b"null":
-            return None
-        elif data.startswith(b"{") or data.startswith(b"[") or data.startswith(b'"'):
+        if data.startswith(b"{"):
             # JSON-encoded data
             try:
                 return json.loads(data.decode("utf-8"))
@@ -155,10 +140,12 @@ class RedisManager:
                 for i, b in enumerate(data):
                     if b == 0x80:  # likely start of pickle protocol
                         try:
+                            # nosec - pickle is used only for internal trusted data
                             return pickle.loads(data[i:])
                         except Exception:
                             break
                 # Fallback: try to unpickle the whole thing
+                # nosec - pickle is used only for internal trusted data
                 return pickle.loads(data)
         else:
             # Try JSON first for numbers, booleans, etc.
@@ -166,7 +153,8 @@ class RedisManager:
                 decoded = data.decode("utf-8")
                 return json.loads(decoded)
             except (json.JSONDecodeError, UnicodeDecodeError):
-                # Fall back to pickle for complex objects
+                # Fall back to pickle for complex objects (internal trusted data only)
+                # nosec - pickle is used only for internal trusted data
                 return pickle.loads(data)
 
     def _generate_key(self, prefix: str, identifier: str) -> str:
@@ -354,9 +342,9 @@ class RedisManager:
 
     def close(self) -> None:
         """Close Redis connection."""
-        if self._redis_client is not None:
-            self._redis_client.close()
-            self._redis_client = None
+        if self._pool is not None:
+            self._pool.disconnect()
+            self._pool = None
 
     def __enter__(self) -> "RedisManager":
         """Context manager entry."""
