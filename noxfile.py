@@ -2,6 +2,7 @@
 import os
 import shlex
 import shutil
+import subprocess  # nosec
 import sys
 from pathlib import Path
 from textwrap import dedent
@@ -200,6 +201,20 @@ def install_poetry_export_plugin(session: Session) -> None:
         pass
 
 
+def is_python_executable_valid(python_executable: str) -> bool:  # nosec
+    """Check if the given Python executable is valid and runnable."""
+    try:
+        subprocess.run(
+            [python_executable, "--version"],
+            capture_output=True,
+            check=True,
+            timeout=10,
+        )
+        return True
+    except Exception:
+        return False
+
+
 @session(python=python_versions)
 def mypy(session: Session) -> None:
     """Type-check using mypy."""
@@ -214,12 +229,14 @@ def mypy(session: Session) -> None:
 
     # Try to check noxfile.py, but skip if there are issues with Python executable path
     if not session.posargs:
-        # Check if the Python executable is accessible
-        if os.path.exists(sys.executable):
-            # If we get here, the executable is accessible
+        if is_python_executable_valid(sys.executable):
             session.run("mypy", f"--python-executable={sys.executable}", "noxfile.py")
         else:
-            print(f"Warning: Python executable not found at {sys.executable}")
+            print(
+                "Warning: Could not check noxfile.py with mypy: "
+                "invalid Python executable"
+            )
+            print(sys.executable)
             print("Skipping noxfile.py type checking.")
 
 
