@@ -17,6 +17,15 @@ autodoc_default_options = {
     "show-inheritance": True,
     "special-members": "__init__",
 }
+autodoc_mock_imports = [
+    "cctbx",
+    "iotbx",
+    "mmtbx",
+    "torch",
+    "redis",
+    "pydantic",
+    "numpy",
+]
 html_theme = "furo"
 html_theme_options = {
     "navigation_with_keys": True,
