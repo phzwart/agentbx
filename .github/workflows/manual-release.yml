@@ -60,29 +60,38 @@ jobs:
 
       - name: Publish to TestPyPI
         if: github.event.inputs.publish_to == 'testpypi'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          TWINE_REPOSITORY_URL: https://test.pypi.org/legacy/
         run: |
           pip install twine
           echo "=== Publishing to TestPyPI with twine ==="
           echo "Files in dist/:"
           ls -la dist/
           echo "Current directory: $(pwd)"
+          echo "Version: ${{ github.event.inputs.version }}"
           echo "Uploading wheel file:"
-          twine upload --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }} --repository-url https://test.pypi.org/legacy/ "dist/agentbx-${{ github.event.inputs.version }}-py3-none-any.whl"
+          twine upload "dist/agentbx-${{ github.event.inputs.version }}-py3-none-any.whl"
           echo "Uploading source file:"
-          twine upload --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }} --repository-url https://test.pypi.org/legacy/ "dist/agentbx-${{ github.event.inputs.version }}.tar.gz"
+          twine upload "dist/agentbx-${{ github.event.inputs.version }}.tar.gz"
 
       - name: Publish to PyPI
         if: github.event.inputs.publish_to == 'pypi'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
           pip install twine
           echo "=== Publishing to PyPI with twine ==="
           echo "Files in dist/:"
           ls -la dist/
           echo "Current directory: $(pwd)"
+          echo "Version: ${{ github.event.inputs.version }}"
           echo "Uploading wheel file:"
-          twine upload --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} "dist/agentbx-${{ github.event.inputs.version }}-py3-none-any.whl"
+          twine upload "dist/agentbx-${{ github.event.inputs.version }}-py3-none-any.whl"
           echo "Uploading source file:"
-          twine upload --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} "dist/agentbx-${{ github.event.inputs.version }}.tar.gz"
+          twine upload "dist/agentbx-${{ github.event.inputs.version }}.tar.gz"
 
       - name: Create Git tag
         run: |

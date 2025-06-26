@@ -102,16 +102,20 @@ jobs:
 
       - name: Publish package on PyPI
         if: steps.check-version.outputs.version_exists == 'false'
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
           pip install twine
           echo "=== Publishing with twine ==="
           echo "Files in dist/:"
           ls -la dist/
           echo "Current directory: $(pwd)"
+          echo "Version: ${{ steps.check-version.outputs.current_version }}"
           echo "Uploading wheel file:"
-          twine upload --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} "dist/agentbx-${{ steps.check-version.outputs.current_version }}-py3-none-any.whl"
+          twine upload "dist/agentbx-${{ steps.check-version.outputs.current_version }}-py3-none-any.whl"
           echo "Uploading source file:"
-          twine upload --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} "dist/agentbx-${{ steps.check-version.outputs.current_version }}.tar.gz"
+          twine upload "dist/agentbx-${{ steps.check-version.outputs.current_version }}.tar.gz"
 
       - name: Create Git tag
         if: steps.check-version.outputs.version_exists == 'false'
