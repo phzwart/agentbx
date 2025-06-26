@@ -57,6 +57,10 @@ jobs:
             echo "version_exists=false" >> $GITHUB_OUTPUT
           fi
 
+          echo "=== Version Check Debug ==="
+          echo "Current version: $current_version"
+          echo "Version exists: ${{ steps.check-version.outputs.version_exists }}"
+
       - name: Debug version info
         run: |
           echo "=== Version Debug Info ==="
@@ -79,7 +83,7 @@ jobs:
           echo "pyproject.toml version: $(grep '^version =' pyproject.toml)"
           cat src/agentbx/_version.py
 
-      - name: Build package
+      - name: Build package (always)
         run: |
           echo "=== Before build ==="
           echo "Current directory: $(pwd)"
@@ -98,10 +102,12 @@ jobs:
 
       - name: Publish package on PyPI
         if: steps.check-version.outputs.version_exists == 'false'
-        uses: pypa/gh-action-pypi-publish@v1.8.6
+        uses: pypa/gh-action-pypi-publish@v1.8.8
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
+          verify-metadata: false
+          skip-existing: false
 
       - name: Create Git tag
         if: steps.check-version.outputs.version_exists == 'false'
