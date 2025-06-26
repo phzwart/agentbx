@@ -342,7 +342,19 @@ class RedisManager:
 
     def _generate_bundle_id(self, bundle: Any) -> str:
         """Generate unique bundle ID based on content and timestamp."""
-        content = str(bundle.__dict__) + str(datetime.now().timestamp())
+        # Handle objects with __slots__ (no __dict__) vs regular objects
+        if hasattr(bundle, "__dict__"):
+            content = str(bundle.__dict__)
+        else:
+            # For objects with __slots__, get attributes from slots
+            content = str(
+                {
+                    attr: getattr(bundle, attr, None)
+                    for attr in getattr(bundle, "__slots__", [])
+                }
+            )
+
+        content += str(datetime.now().timestamp())
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
     def _calculate_checksum(self, data: bytes) -> str:
