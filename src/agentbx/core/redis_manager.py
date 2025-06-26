@@ -68,8 +68,8 @@ class RedisManager:
         self.health_check_interval = health_check_interval
         self.default_ttl = default_ttl
 
-        self._pool = None
-        self._last_health_check = 0
+        self._pool: Optional[redis.ConnectionPool] = None
+        self._last_health_check: float = 0.0
         self._is_healthy = False
 
     def _get_client(self) -> redis.Redis:
