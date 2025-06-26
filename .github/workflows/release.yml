@@ -122,7 +122,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add src/agentbx/_version.py pyproject.toml
+          git add src/agentbx/_version.py pyproject.toml CHANGELOG.md
           git commit -m "Sync version to ${{ steps.check-version.outputs.current_version }}" || true
           git tag -a v${{ steps.check-version.outputs.current_version }} -m "Release v${{ steps.check-version.outputs.current_version }}"
           git push origin v${{ steps.check-version.outputs.current_version }}

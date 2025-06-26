@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "agentbx"
-version = "1.0.3"
+version = "1.0.4"
 description = "Agentbx"
 authors = ["Petrus Zwart <PHZwart@lbl.gov>"]
 license = "MIT"
@@ -13,7 +13,7 @@ classifiers = [
 ]
 
 [tool.poetry.urls]
-Changelog = "https://github.com/phzwart/agentbx/releases"
+Changelog = "https://github.com/phzwart/agentbx/blob/main/CHANGELOG.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
