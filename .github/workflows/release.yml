@@ -64,7 +64,11 @@ jobs:
           echo "pyproject.toml version: $(grep '^version =' pyproject.toml)"
           echo "_version.py content:"
           cat src/agentbx/_version.py
+          echo "Direct version check:"
+          python -c "import ast; print('_version.py version:', ast.literal_eval(open('src/agentbx/_version.py').readlines()[2].split('=')[1].strip()))"
           echo "Python import test:"
+          # Install the package in development mode first
+          poetry install --no-interaction
           python -c "from agentbx import __version__; print(f'Imported version: {__version__}')"
 
       - name: Sync version across files
