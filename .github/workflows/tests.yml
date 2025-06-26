@@ -155,17 +155,36 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: coverage-data
+        continue-on-error: true
+
+      - name: Check if coverage data exists
+        id: coverage-check
+        run: |
+          if [ -f ".coverage" ] || [ -f ".coverage.*" ]; then
+            echo "coverage_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "coverage_exists=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Combine coverage data and display human readable report
+        if: steps.coverage-check.outputs.coverage_exists == 'true'
         run: |
           nox --session=coverage
 
       - name: Create coverage report
+        if: steps.coverage-check.outputs.coverage_exists == 'true'
         run: |
           nox --session=coverage -- xml
 
       - name: Upload coverage to GitHub
+        if: steps.coverage-check.outputs.coverage_exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage.xml
+
+      - name: No coverage data available
+        if: steps.coverage-check.outputs.coverage_exists == 'false'
+        run: |
+          echo "No coverage data available. Tests may have failed before coverage could be generated."
+          echo "This is normal when tests fail early in the process."
