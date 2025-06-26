@@ -57,14 +57,31 @@ jobs:
             echo "version_exists=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Debug version info
+        run: |
+          echo "=== Version Debug Info ==="
+          echo "Poetry version: $(poetry version)"
+          echo "pyproject.toml version: $(grep '^version =' pyproject.toml)"
+          echo "_version.py content:"
+          cat src/agentbx/_version.py
+          echo "Python import test:"
+          python -c "from agentbx import __version__; print(f'Imported version: {__version__}')"
+
       - name: Sync version across files
         if: steps.check-version.outputs.version_exists == 'false'
         run: |
           python scripts/sync_version.py ${{ steps.check-version.outputs.current_version }}
+          echo "=== After sync ==="
+          echo "pyproject.toml version: $(grep '^version =' pyproject.toml)"
+          cat src/agentbx/_version.py
 
       - name: Build package
         run: |
           poetry build --ansi
+          echo "=== Built packages ==="
+          ls -la dist/
+          echo "=== Wheel metadata ==="
+          python -c "import zipfile; z = zipfile.ZipFile('dist/agentbx-${{ steps.check-version.outputs.current_version }}-py3-none-any.whl'); print(z.read('agentbx-${{ steps.check-version.outputs.current_version }}.dist-info/METADATA').decode()[:300])"
 
       - name: Publish package on PyPI
         if: steps.check-version.outputs.version_exists == 'false'
