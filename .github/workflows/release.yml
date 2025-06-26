@@ -66,10 +66,10 @@ jobs:
           cat src/agentbx/_version.py
           echo "Direct version check:"
           python -c "import ast; print('_version.py version:', ast.literal_eval(open('src/agentbx/_version.py').readlines()[2].split('=')[1].strip()))"
-          echo "Python import test:"
-          # Install the package in development mode first
-          poetry install --no-interaction
-          python -c "from agentbx import __version__; print(f'Imported version: {__version__}')"
+          echo "Package structure:"
+          ls -la src/agentbx/
+          echo "pyproject.toml content (first 20 lines):"
+          head -20 pyproject.toml
 
       - name: Sync version across files
         if: steps.check-version.outputs.version_exists == 'false'
@@ -81,11 +81,20 @@ jobs:
 
       - name: Build package
         run: |
+          echo "=== Before build ==="
+          echo "Current directory: $(pwd)"
+          echo "Files in src/agentbx/:"
+          ls -la src/agentbx/
+          echo "pyproject.toml content:"
+          cat pyproject.toml
+          echo "=== Building package ==="
           poetry build --ansi
           echo "=== Built packages ==="
           ls -la dist/
+          echo "=== Wheel contents ==="
+          python -c "import zipfile; z = zipfile.ZipFile('dist/agentbx-${{ steps.check-version.outputs.current_version }}-py3-none-any.whl'); print('Files in wheel:'); [print(f) for f in z.namelist() if 'dist-info' in f]"
           echo "=== Wheel metadata ==="
-          python -c "import zipfile; z = zipfile.ZipFile('dist/agentbx-${{ steps.check-version.outputs.current_version }}-py3-none-any.whl'); print(z.read('agentbx-${{ steps.check-version.outputs.current_version }}.dist-info/METADATA').decode()[:300])"
+          python -c "import zipfile; z = zipfile.ZipFile('dist/agentbx-${{ steps.check-version.outputs.current_version }}-py3-none-any.whl'); print(z.read('agentbx-${{ steps.check-version.outputs.current_version }}.dist-info/METADATA').decode()[:500])"
 
       - name: Publish package on PyPI
         if: steps.check-version.outputs.version_exists == 'false'
