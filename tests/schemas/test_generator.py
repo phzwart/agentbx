@@ -746,8 +746,8 @@ class TestQuickGenerate:
         # Mock the default paths
         with patch("agentbx.schemas.generator.Path") as mock_path:
             mock_path.return_value = temp_schema_dir
-            mock_path.side_effect = (
-                lambda x: temp_schema_dir
+            mock_path.side_effect = lambda x: (
+                temp_schema_dir
                 if "definitions" in str(x)
                 else tmp_path / "generated.py"
             )

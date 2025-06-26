@@ -157,9 +157,11 @@ def analyze_bundle(bundle: Any) -> Dict[str, Any]:
             "n_assets": len(bundle.assets),
             "assets": {},
             "metadata": dict(bundle.metadata) if hasattr(bundle, "metadata") else {},
-            "size_estimate": bundle.get_size_estimate()
-            if hasattr(bundle, "get_size_estimate")
-            else None,
+            "size_estimate": (
+                bundle.get_size_estimate()
+                if hasattr(bundle, "get_size_estimate")
+                else None
+            ),
         }
 
         # Analyze each asset
@@ -172,9 +174,9 @@ def analyze_bundle(bundle: Any) -> Dict[str, Any]:
                 analysis["assets"][asset_name] = {
                     "type": "xray_structure",
                     "n_atoms": len(asset.scatterers()),
-                    "n_chains": len(asset.chains())
-                    if hasattr(asset, "chains")
-                    else None,
+                    "n_chains": (
+                        len(asset.chains()) if hasattr(asset, "chains") else None
+                    ),
                     "unit_cell": str(asset.unit_cell()),
                     "space_group": str(asset.space_group()),
                 }
@@ -189,9 +191,11 @@ def analyze_bundle(bundle: Any) -> Dict[str, Any]:
                 # Generic object
                 analysis["assets"][asset_name] = {
                     "type": type(asset).__name__,
-                    "str_repr": str(asset)[:100] + "..."
-                    if len(str(asset)) > 100
-                    else str(asset),
+                    "str_repr": (
+                        str(asset)[:100] + "..."
+                        if len(str(asset)) > 100
+                        else str(asset)
+                    ),
                 }
 
         return analysis

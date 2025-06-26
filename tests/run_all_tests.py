@@ -148,7 +148,9 @@ def check_per_file_coverage():
                         "required": min_required,
                     }
                 )
-                print(f"✅ PASS: {rel_path} - {percent_covered:.1f}% >= {min_required}%")
+                print(
+                    f"✅ PASS: {rel_path} - {percent_covered:.1f}% >= {min_required}%"
+                )
         else:
             # File not in requirements, check if strict mode is enabled
             if strict_mode and percent_covered < overall_minimum:

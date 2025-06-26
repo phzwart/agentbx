@@ -70,9 +70,9 @@ class SchemaDefinition(BaseModel):
     required_assets: List[str]
     optional_assets: Optional[List[str]] = []
     asset_definitions: Dict[str, AssetDefinition]
-    validation_rules: Optional[
-        Dict[str, Dict[str, Any]]
-    ] = {}  # Changed from List to Dict
+    validation_rules: Optional[Dict[str, Dict[str, Any]]] = (
+        {}
+    )  # Changed from List to Dict
     workflow_patterns: Optional[Dict[str, WorkflowPattern]] = {}
     dependencies: Optional[List[str]] = []
     produces_for: Optional[List[str]] = []

@@ -1,4 +1,5 @@
 """Sphinx configuration."""
+
 project = "Agentbx"
 author = "Petrus Zwart"
 copyright = "2025, Petrus Zwart"
