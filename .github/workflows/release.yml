@@ -107,7 +107,11 @@ jobs:
           echo "=== Publishing with twine ==="
           echo "Files in dist/:"
           ls -la dist/
-          twine upload --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} dist/agentbx-${{ steps.check-version.outputs.current_version }}-py3-none-any.whl dist/agentbx-${{ steps.check-version.outputs.current_version }}.tar.gz
+          echo "Current directory: $(pwd)"
+          echo "Uploading wheel file:"
+          twine upload --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} "dist/agentbx-${{ steps.check-version.outputs.current_version }}-py3-none-any.whl"
+          echo "Uploading source file:"
+          twine upload --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} "dist/agentbx-${{ steps.check-version.outputs.current_version }}.tar.gz"
 
       - name: Create Git tag
         if: steps.check-version.outputs.version_exists == 'false'
