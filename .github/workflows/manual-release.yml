@@ -50,9 +50,9 @@ jobs:
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
 
-      - name: Set version
+      - name: Sync version across files
         run: |
-          poetry version ${{ github.event.inputs.version }}
+          python scripts/sync_version.py ${{ github.event.inputs.version }}
 
       - name: Build package
         run: |
@@ -77,5 +77,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          git add src/agentbx/_version.py pyproject.toml
+          git commit -m "Sync version to ${{ github.event.inputs.version }}" || true
           git tag -a v${{ github.event.inputs.version }} -m "Release v${{ github.event.inputs.version }}"
           git push origin v${{ github.event.inputs.version }}
