@@ -60,22 +60,17 @@ jobs:
 
       - name: Publish to TestPyPI
         if: github.event.inputs.publish_to == 'testpypi'
-        uses: pypa/gh-action-pypi-publish@v1.8.8
-        with:
-          user: __token__
-          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
-          repository-url: https://test.pypi.org/legacy/
-          verify-metadata: false
-          skip-existing: false
+        run: |
+          pip install twine
+          echo "=== Publishing to TestPyPI with twine ==="
+          twine upload --username __token__ --password ${{ secrets.TEST_PYPI_API_TOKEN }} --repository-url https://test.pypi.org/legacy/ dist/*
 
       - name: Publish to PyPI
         if: github.event.inputs.publish_to == 'pypi'
-        uses: pypa/gh-action-pypi-publish@v1.8.8
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          verify-metadata: false
-          skip-existing: false
+        run: |
+          pip install twine
+          echo "=== Publishing to PyPI with twine ==="
+          twine upload --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} dist/*
 
       - name: Create Git tag
         run: |
