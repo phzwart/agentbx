@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "agentbx"
-version = "0.1.0"
+version = "1.0.0"
 description = "Agentbx"
 authors = ["Petrus Zwart <PHZwart@lbl.gov>"]
 license = "MIT"
