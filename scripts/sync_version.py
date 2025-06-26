@@ -22,10 +22,10 @@ def update_pyproject_toml(version: str) -> None:
     pyproject_file = Path("pyproject.toml")
     content = pyproject_file.read_text()
 
-    # Replace version line
-    pattern = r'version = "[^"]*"'
+    # Replace only the package version line, not dependency versions
+    pattern = r'^version = "[^"]*"'
     replacement = f'version = "{version}"'
-    new_content = re.sub(pattern, replacement, content)
+    new_content = re.sub(pattern, replacement, content, flags=re.MULTILINE)
 
     pyproject_file.write_text(new_content)
     print(f"Updated {pyproject_file}")
