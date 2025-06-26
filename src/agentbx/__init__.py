@@ -15,7 +15,7 @@ from .schemas.generated import StructureFactorDataBundle
 from .schemas.generated import TargetDataBundle
 
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 __author__ = "Petrus Zwart"
 __email__ = "PHZwart@lbl.gov"
 
