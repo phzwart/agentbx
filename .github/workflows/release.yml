@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+  workflow_dispatch:
 
 jobs:
   release:
@@ -15,29 +16,37 @@ jobs:
       contents: write
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
       - name: Set up Python
-        uses: actions/setup-python@v4.6.1
+        uses: actions/setup-python@v4
         with:
           python-version: "3.10"
 
-      - name: Upgrade pip
-        run: |
-          pip install --constraint=.github/workflows/constraints.txt pip
-          pip --version
-
       - name: Install Poetry
-        run: |
-          pip install --constraint=.github/workflows/constraints.txt poetry
-          poetry --version
+        uses: snok/install-poetry@v1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
 
       - name: Check if there is a parent commit
         id: check-parent-commit
         run: |
-          echo "::set-output name=sha::$(git rev-parse --verify --quiet HEAD^)"
+          echo "sha=$(git rev-parse --verify --quiet HEAD^)" >> $GITHUB_OUTPUT
 
       - name: Detect and tag new version
         id: check-version
@@ -63,12 +72,14 @@ jobs:
         uses: pypa/gh-action-pypi-publish@v1.8.6
         with:
           user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Publish package on TestPyPI
         if: "! steps.check-version.outputs.tag"
         uses: pypa/gh-action-pypi-publish@v1.8.6
         with:
           user: __token__
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
           repository-url: https://test.pypi.org/legacy/
 
       - name: Publish the release notes
