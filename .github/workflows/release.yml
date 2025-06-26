@@ -105,7 +105,9 @@ jobs:
         run: |
           pip install twine
           echo "=== Publishing with twine ==="
-          twine upload --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} dist/*
+          echo "Files in dist/:"
+          ls -la dist/
+          twine upload --username __token__ --password ${{ secrets.PYPI_API_TOKEN }} dist/agentbx-${{ steps.check-version.outputs.current_version }}-py3-none-any.whl dist/agentbx-${{ steps.check-version.outputs.current_version }}.tar.gz
 
       - name: Create Git tag
         if: steps.check-version.outputs.version_exists == 'false'
