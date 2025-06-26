@@ -4,11 +4,7 @@ Script to download PDB files and associated data from the Protein Data Bank.
 
 import logging
 import os
-import re
 import sys
-import tempfile
-import zipfile
-from pathlib import Path
 from urllib.parse import urljoin
 
 import click
@@ -41,6 +37,9 @@ class PDBDownloader:
 
         Returns:
             Path to downloaded PDB file
+
+        Raises:
+            requests.exceptions.RequestException: If the download fails
         """
         pdb_code = pdb_code.lower()
         pdb_file = f"{pdb_code}.pdb"
@@ -123,6 +122,9 @@ class PDBDownloader:
 
         Returns:
             Path to generated MTZ file
+
+        Raises:
+            RuntimeError: If CCTBX is not available or synthetic data generation fails
         """
         try:
             # Import CCTBX modules for synthetic data generation
@@ -180,7 +182,7 @@ class PDBDownloader:
 
         except ImportError as e:
             logger.error(f"CCTBX not available for synthetic data generation: {e}")
-            raise RuntimeError("Cannot generate synthetic MTZ without CCTBX")
+            raise RuntimeError("Cannot generate synthetic MTZ without CCTBX") from e
         except Exception as e:
             logger.error(f"Failed to generate synthetic MTZ: {e}")
             raise

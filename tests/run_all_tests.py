@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
 Comprehensive test runner for agentbx.
+
 Runs all tests, generates coverage reports, and checks per-file coverage goals.
 """
 
@@ -251,7 +252,7 @@ def main():
     print("  - coverage.json (JSON format)")
     print("  - coverage.xml (XML format for CI)")
     print("  - htmlcov/ (Detailed HTML report)")
-    print(f"\n📊 View detailed coverage: open htmlcov/index.html")
+    print("\n📊 View detailed coverage: open htmlcov/index.html")
     print(f"Completed at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
 

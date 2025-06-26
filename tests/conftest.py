@@ -12,6 +12,7 @@ _original_import = builtins.__import__
 
 
 def mock_import(name, *args, **kwargs):
+    """Mock import function to replace CCTBX modules with MagicMock objects."""
     # Only mock the top-level cctbx, iotbx, mmtbx modules
     if name.split(".")[0] in {"cctbx", "iotbx", "mmtbx"}:
         if name not in sys.modules:
@@ -21,10 +22,12 @@ def mock_import(name, *args, **kwargs):
 
 
 def pytest_sessionstart(session):
+    """Set up mock imports at the start of the test session."""
     builtins.__import__ = mock_import
 
 
 def pytest_sessionfinish(session, exitstatus):
+    """Restore original imports at the end of the test session."""
     builtins.__import__ = _original_import
 
 

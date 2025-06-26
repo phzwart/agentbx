@@ -55,9 +55,9 @@ class CrystallographicFileHandler:
             return xray_structure
 
         except ImportError as e:
-            raise ImportError(f"CCTBX not available: {e}")
+            raise ImportError(f"CCTBX not available: {e}") from e
         except Exception as e:
-            raise ValueError(f"Error reading PDB file {pdb_file}: {e}")
+            raise ValueError(f"Error reading PDB file {pdb_file}: {e}") from e
 
     def read_mtz_file(self, mtz_file: str, array_index: Optional[int] = None) -> Any:
         """
@@ -108,9 +108,9 @@ class CrystallographicFileHandler:
             raise ValueError("No suitable miller array found in MTZ file")
 
         except ImportError as e:
-            raise ImportError(f"CCTBX not available: {e}")
+            raise ImportError(f"CCTBX not available: {e}") from e
         except Exception as e:
-            raise ValueError(f"Error reading MTZ file {mtz_file}: {e}")
+            raise ValueError(f"Error reading MTZ file {mtz_file}: {e}") from e
 
     def get_file_info(self, file_path: str) -> Dict[str, Any]:
         """
@@ -300,9 +300,11 @@ def _create_synthetic_miller_indices(xray_structure: Any, d_min: float = 2.0) ->
         return f_obs
 
     except ImportError as e:
-        raise ImportError(f"CCTBX not available for synthetic data generation: {e}")
+        raise ImportError(
+            f"CCTBX not available for synthetic data generation: {e}"
+        ) from e
     except Exception as e:
-        raise RuntimeError(f"Failed to generate synthetic miller indices: {e}")
+        raise RuntimeError(f"Failed to generate synthetic miller indices: {e}") from e
 
 
 def validate_crystallographic_files(

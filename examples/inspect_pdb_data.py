@@ -1,10 +1,10 @@
+#!/usr/bin/env python3
 """
 Script to inspect downloaded PDB and MTZ data.
 """
 
 import logging
 import os
-import sys
 
 import click
 
@@ -68,9 +68,9 @@ def inspect_mtz_file(mtz_file: str):
                 click.echo(f"    Resolution: {array.d_min():.2f} Å")
 
             if array.is_complex_array():
-                click.echo(f"    Complex array: Yes")
+                click.echo("    Complex array: Yes")
             elif array.is_real_array():
-                click.echo(f"    Real array: Yes")
+                click.echo("    Real array: Yes")
 
             # Show some statistics
             if hasattr(array, "data"):

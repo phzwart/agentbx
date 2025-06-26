@@ -2,21 +2,32 @@
 Example demonstrating Redis manager with StructureFactorAgent using real PDB and MTZ files.
 """
 
+import logging
 import os
 import sys
 
 
+# Add src to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-import logging
-
-from agentbx.agents.structure_factor_agent import StructureFactorAgent
-from agentbx.core.redis_manager import RedisManager
-from agentbx.utils.crystallographic_utils import create_atomic_model_bundle
-from agentbx.utils.crystallographic_utils import validate_crystallographic_files
-from agentbx.utils.data_analysis_utils import analyze_bundle
-from agentbx.utils.data_analysis_utils import print_analysis_summary
-from agentbx.utils.workflow_utils import execute_structure_factor_workflow
+try:
+    from agentbx.agents.structure_factor_agent import StructureFactorAgent
+    from agentbx.core.redis_manager import RedisManager
+    from agentbx.utils.crystallographic_utils import create_atomic_model_bundle
+    from agentbx.utils.crystallographic_utils import validate_crystallographic_files
+    from agentbx.utils.data_analysis_utils import analyze_bundle
+    from agentbx.utils.data_analysis_utils import print_analysis_summary
+    from agentbx.utils.workflow_utils import execute_structure_factor_workflow
+except ImportError:
+    # Fallback if the path modification didn't work
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+    from agentbx.agents.structure_factor_agent import StructureFactorAgent
+    from agentbx.core.redis_manager import RedisManager
+    from agentbx.utils.crystallographic_utils import create_atomic_model_bundle
+    from agentbx.utils.crystallographic_utils import validate_crystallographic_files
+    from agentbx.utils.data_analysis_utils import analyze_bundle
+    from agentbx.utils.data_analysis_utils import print_analysis_summary
+    from agentbx.utils.workflow_utils import execute_structure_factor_workflow
 
 
 # Set up logging
@@ -105,7 +116,7 @@ def main():
 
         # Create atomic model bundle using utility
         atomic_model_bundle = create_atomic_model_bundle(pdb_file, mtz_file)
-        logger.info(f"Created atomic model bundle using utility")
+        logger.info("Created atomic model bundle using utility")
 
         # Store input bundle in Redis
         input_bundle_id = redis_manager.store_bundle(atomic_model_bundle)

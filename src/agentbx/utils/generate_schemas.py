@@ -15,7 +15,8 @@ from pathlib import Path
 # Add src to path so we can import our modules
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from agentbx.schemas.generator import main
+# Import after path modification
+from agentbx.schemas.generator import main  # noqa: E402
 
 
 if __name__ == "__main__":
