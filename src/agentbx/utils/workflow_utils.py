@@ -63,8 +63,8 @@ class WorkflowManager:
     def add_workflow_step(
         self,
         step_name: str,
-        agent_class: Any,
-        agent_id: str,
+        processor_class: Any,
+        processor_id: str,
         input_bundle_types: List[str],
         output_bundle_types: List[str],
     ) -> None:
@@ -73,8 +73,8 @@ class WorkflowManager:
 
         Args:
             step_name: Name of the step
-            agent_class: Agent class to use
-            agent_id: Agent ID
+            processor_class: Processor class to use
+            processor_id: Processor ID
             input_bundle_types: Required input bundle types
             output_bundle_types: Expected output bundle types
 
@@ -86,8 +86,8 @@ class WorkflowManager:
 
         step = {
             "name": step_name,
-            "agent_class": agent_class,
-            "agent_id": agent_id,
+            "processor_class": processor_class,
+            "processor_id": processor_id,
             "input_bundle_types": input_bundle_types,
             "output_bundle_types": output_bundle_types,
             "status": "pending",
@@ -140,8 +140,10 @@ class WorkflowManager:
                 step["input_bundle_ids"] = step_input_ids.copy()
 
                 # Execute the step
-                agent = step["agent_class"](self.redis_manager, step["agent_id"])
-                step_output_ids = agent.run(step_input_ids)
+                processor = step["processor_class"](
+                    self.redis_manager, step["processor_id"]
+                )
+                step_output_ids = processor.run(step_input_ids)
 
                 step["output_bundle_ids"] = step_output_ids
                 step["status"] = "completed"
@@ -213,7 +215,7 @@ def create_simple_structure_factor_workflow(
     Returns:
         Workflow manager with configured workflow
     """
-    from ..agents.structure_factor_agent import StructureFactorAgent
+    from ..agents.structure_factor_agent import StructureFactorProcessor
     from .crystallographic_utils import create_atomic_model_bundle
 
     # Create workflow manager
@@ -228,8 +230,8 @@ def create_simple_structure_factor_workflow(
     # Add structure factor calculation step
     workflow_mgr.add_workflow_step(
         step_name="calculate_structure_factors",
-        agent_class=StructureFactorAgent,
-        agent_id="sf_agent_workflow",
+        processor_class=StructureFactorProcessor,
+        processor_id="sf_processor_workflow",
         input_bundle_types=["atomic_model_data"],
         output_bundle_types=["structure_factor_data"],
     )

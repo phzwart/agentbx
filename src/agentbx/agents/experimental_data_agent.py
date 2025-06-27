@@ -1,6 +1,6 @@
 # src/agentbx/agents/experimental_data_agent.py
 """
-Agent responsible ONLY for processing experimental data.
+Processor responsible ONLY for processing experimental data.
 
 Input: raw_experimental_data (MTZ, HKL files, etc.)
 Output: experimental_data
@@ -16,22 +16,22 @@ from typing import Dict
 from typing import List
 
 from ..core.bundle_base import Bundle
-from .base import SinglePurposeAgent
+from .base import SinglePurposeProcessor
 
 
-class ExperimentalDataAgent(SinglePurposeAgent):
+class ExperimentalDataProcessor(SinglePurposeProcessor):
     """
-    Pure experimental data processing agent.
+    Pure experimental data processing processor.
 
     Responsibility: Convert raw experimental files to clean experimental_data bundles.
     """
 
     def define_input_bundle_types(self) -> List[str]:
-        """Define the input bundle types for this agent."""
+        """Define the input bundle types for this processor."""
         return ["raw_experimental_data"]
 
     def define_output_bundle_types(self) -> List[str]:
-        """Define the output bundle types for this agent."""
+        """Define the output bundle types for this processor."""
         return ["experimental_data"]
 
     def process_bundles(self, input_bundles: Dict[str, Bundle]) -> Dict[str, Bundle]:
@@ -381,9 +381,9 @@ class ExperimentalDataAgent(SinglePurposeAgent):
         return f_obs.completeness(complete_set)
 
     def get_computation_info(self) -> Dict[str, Any]:
-        """Return information about this agent's computation."""
+        """Return information about this processor's computation."""
         return {
-            "agent_type": "ExperimentalDataAgent",
+            "processor_type": "ExperimentalDataProcessor",
             "responsibility": "Experimental data processing",
             "supported_formats": ["MTZ", "HKL", "CIF", "SCA"],
             "algorithms": ["french_wilson", "data_validation", "completeness_analysis"],

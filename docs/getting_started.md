@@ -28,15 +28,15 @@ poetry install
 
 ```python
 from agentbx.core.redis_manager import RedisManager
-from agentbx.agents.structure_factor_agent import StructureFactorAgent
+from agentbx.agents.structure_factor_agent import StructureFactorProcessor
 
 # Initialize Redis manager
 redis_manager = RedisManager(host="localhost", port=6379)
 
-# Create a structure factor agent
-agent = StructureFactorAgent(redis_manager, "sf_agent_001")
+# Create a structure factor processor
+processor = StructureFactorProcessor(redis_manager, "sf_processor_001")
 
-# Your agent is ready to process crystallographic data!
+# Your processor is ready to process crystallographic data!
 ```
 
 ### Command Line Interface
@@ -54,14 +54,14 @@ agentbx analyze examples/input.pdb
 
 ## Core Concepts
 
-### Agents
+### Processors
 
-Agents are single-purpose components that handle specific crystallographic tasks:
+Processors are single-purpose components that handle specific crystallographic tasks:
 
-- **StructureFactorAgent**: Calculates structure factors from atomic models
-- **TargetAgent**: Computes target functions for refinement
-- **GradientAgent**: Calculates gradients for optimization
-- **ExperimentalDataAgent**: Handles experimental data processing
+- **ExperimentalDataProcessor**: Handles experimental data processing
+- **StructureFactorProcessor**: Calculates structure factors from atomic models
+- **TargetProcessor**: Computes target functions for refinement
+- **GradientProcessor**: Calculates gradients for optimization
 
 ### Bundles
 

@@ -1,6 +1,6 @@
 # src/agentbx/agents/gradient_agent.py
 """
-Agent responsible ONLY for gradient calculations via chain rule.
+Processor responsible ONLY for gradient calculations via chain rule.
 
 Input: structure_factor_data + target_data + atomic_model_data
 Output: gradient_data
@@ -13,22 +13,22 @@ from typing import Dict
 from typing import List
 
 from ..core.bundle_base import Bundle
-from .base import SinglePurposeAgent
+from .base import SinglePurposeProcessor
 
 
-class GradientAgent(SinglePurposeAgent):
+class GradientProcessor(SinglePurposeProcessor):
     """
-    Pure gradient calculation agent via chain rule.
+    Pure gradient calculation processor via chain rule.
 
     Responsibility: Apply chain rule to get parameter gradients from target gradients.
     """
 
     def define_input_bundle_types(self) -> List[str]:
-        """Define the input bundle types for this agent."""
+        """Define the input bundle types for this processor."""
         return ["structure_factor_data", "target_data", "atomic_model_data"]
 
     def define_output_bundle_types(self) -> List[str]:
-        """Define the output bundle types for this agent."""
+        """Define the output bundle types for this processor."""
         return ["gradient_data"]
 
     def process_bundles(self, input_bundles: Dict[str, Bundle]) -> Dict[str, Bundle]:
@@ -170,9 +170,9 @@ class GradientAgent(SinglePurposeAgent):
         # compute numerical derivatives for comparison
 
     def get_computation_info(self) -> Dict[str, Any]:
-        """Return information about this agent's computation."""
+        """Return information about this processor's computation."""
         return {
-            "agent_type": "GradientAgent",
+            "processor_type": "GradientProcessor",
             "responsibility": "Chain rule gradient calculation",
             "algorithms": ["automatic_differentiation", "chain_rule"],
             "cctbx_modules": ["cctbx.examples.structure_factor_derivatives"],

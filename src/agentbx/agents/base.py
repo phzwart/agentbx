@@ -1,8 +1,8 @@
 # src/agentbx/agents/base.py
 """
-Base classes for agentbx agents.
+Base classes for agentbx processors.
 
-This module provides the foundation for all agents in the agentbx system.
+This module provides the foundation for all processors in the agentbx system.
 """
 
 from abc import ABC
@@ -15,29 +15,29 @@ from ..core.base_client import BaseClient
 from ..core.bundle_base import Bundle
 
 
-class SinglePurposeAgent(BaseClient, ABC):
+class SinglePurposeProcessor(BaseClient, ABC):
     """
-    Base class for agents with single, clear responsibility.
+    Base class for processors with single, clear responsibility.
 
     Design principles:
-    1. One responsibility per agent
+    1. One responsibility per processor
     2. Clear input/output bundle contracts
-    3. No mixing of concerns (e.g., no targets in structure factor agents)
+    3. No mixing of concerns (e.g., no targets in structure factor processors)
     4. Stateless operation (all state in bundles)
     """
 
-    def __init__(self, redis_manager: Any, agent_id: str) -> None:
-        super().__init__(redis_manager, agent_id)
+    def __init__(self, redis_manager: Any, processor_id: str) -> None:
+        super().__init__(redis_manager, processor_id)
         self._input_bundle_types = self.define_input_bundle_types()
         self._output_bundle_types = self.define_output_bundle_types()
 
     @abstractmethod
     def define_input_bundle_types(self) -> List[str]:
-        """Define what bundle types this agent requires as input."""
+        """Define what bundle types this processor requires as input."""
 
     @abstractmethod
     def define_output_bundle_types(self) -> List[str]:
-        """Define what bundle types this agent produces as output."""
+        """Define what bundle types this processor produces as output."""
 
     @abstractmethod
     def process_bundles(self, input_bundles: Dict[str, Bundle]) -> Dict[str, Bundle]:

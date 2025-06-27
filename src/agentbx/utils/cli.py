@@ -22,6 +22,11 @@ def cli() -> None:
     """Agentbx utilities command-line interface."""
 
 
+def main() -> None:
+    """Main entry point for the CLI."""
+    cli()
+
+
 @cli.command()
 @click.argument("pdb_file")
 @click.argument("mtz_file", required=False)
@@ -91,4 +96,4 @@ def workflow(pdb_file: str, mtz_file: Optional[str], host: str, port: int) -> No
 
 
 if __name__ == "__main__":
-    cli()
+    main()

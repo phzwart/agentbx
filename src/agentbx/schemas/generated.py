@@ -89,7 +89,7 @@ class TargetDataBundle(BaseModel):
 
     def validate_dependencies(self, available_bundles: Dict[str, "BaseModel"]) -> bool:
         """Validate that all dependencies are satisfied."""
-        required_deps: List[str] = ["structure_factor_data", "experimental_data"]
+        required_deps: List[str] = ["structure_factor_data", "experimental_data"] or []
         for dep in required_deps:
             if dep not in available_bundles:
                 raise ValueError(f"Missing dependency: {dep}")
@@ -162,7 +162,7 @@ class GradientDataBundle(BaseModel):
             "target_data",
             "structure_factor_data",
             "atomic_model_data",
-        ]
+        ] or []
         for dep in required_deps:
             if dep not in available_bundles:
                 raise ValueError(f"Missing dependency: {dep}")
@@ -234,7 +234,7 @@ class AtomicModelDataBundle(BaseModel):
 
     def validate_dependencies(self, available_bundles: Dict[str, "BaseModel"]) -> bool:
         """Validate that all dependencies are satisfied."""
-        required_deps: List[str] = []
+        required_deps: List[str] = [] or []
         for dep in required_deps:
             if dep not in available_bundles:
                 raise ValueError(f"Missing dependency: {dep}")
@@ -323,7 +323,7 @@ class ExperimentalDataBundle(BaseModel):
 
     def validate_dependencies(self, available_bundles: Dict[str, "BaseModel"]) -> bool:
         """Validate that all dependencies are satisfied."""
-        required_deps: List[str] = []
+        required_deps: List[str] = [] or []
         for dep in required_deps:
             if dep not in available_bundles:
                 raise ValueError(f"Missing dependency: {dep}")
@@ -422,7 +422,7 @@ class StructureFactorDataBundle(BaseModel):
 
     def validate_dependencies(self, available_bundles: Dict[str, "BaseModel"]) -> bool:
         """Validate that all dependencies are satisfied."""
-        required_deps: List[str] = ["atomic_model_data"]
+        required_deps: List[str] = ["atomic_model_data"] or []
         for dep in required_deps:
             if dep not in available_bundles:
                 raise ValueError(f"Missing dependency: {dep}")
