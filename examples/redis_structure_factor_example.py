@@ -1,5 +1,5 @@
 """
-Example demonstrating Redis manager with StructureFactorAgent using real PDB and MTZ files.
+Example demonstrating Redis manager with StructureFactorProcessor using real PDB and MTZ files.
 """
 
 import logging
@@ -11,7 +11,7 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 try:
-    from agentbx.agents.structure_factor_agent import StructureFactorAgent
+    from agentbx.agents.structure_factor_agent import StructureFactorProcessor
     from agentbx.core.redis_manager import RedisManager
     from agentbx.utils.crystallographic_utils import create_atomic_model_bundle
     from agentbx.utils.crystallographic_utils import validate_crystallographic_files
@@ -21,7 +21,7 @@ try:
 except ImportError:
     # Fallback if the path modification didn't work
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-    from agentbx.agents.structure_factor_agent import StructureFactorAgent
+    from agentbx.agents.structure_factor_agent import StructureFactorProcessor
     from agentbx.core.redis_manager import RedisManager
     from agentbx.utils.crystallographic_utils import create_atomic_model_bundle
     from agentbx.utils.crystallographic_utils import validate_crystallographic_files
@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     """Main example function."""
-    logger.info("Starting Redis Structure Factor Agent Example with Real Data")
+    logger.info("Starting Redis Structure Factor Processor Example with Real Data")
 
     # Check for input files
     pdb_file = "examples/input.pdb"
@@ -110,9 +110,9 @@ def main():
     # Option 2: Manual execution (for comparison)
     logger.info("\n=== Manual Execution (for comparison) ===")
     try:
-        # Create structure factor agent
-        agent = StructureFactorAgent(redis_manager, "sf_agent_manual")
-        logger.info(f"Created agent: {agent.get_client_info()}")
+        # Create structure factor processor
+        processor = StructureFactorProcessor(redis_manager, "sf_processor_manual")
+        logger.info(f"Created processor: {processor.get_client_info()}")
 
         # Create atomic model bundle using utility
         atomic_model_bundle = create_atomic_model_bundle(pdb_file, mtz_file)
@@ -122,9 +122,9 @@ def main():
         input_bundle_id = redis_manager.store_bundle(atomic_model_bundle)
         logger.info(f"Stored atomic model bundle with ID: {input_bundle_id}")
 
-        # Run the agent
+        # Run the processor
         input_bundle_ids = {"atomic_model_data": input_bundle_id}
-        output_bundle_ids = agent.run(input_bundle_ids)
+        output_bundle_ids = processor.run(input_bundle_ids)
         logger.info(
             f"Manual execution completed. Output bundle IDs: {output_bundle_ids}"
         )

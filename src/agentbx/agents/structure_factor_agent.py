@@ -1,6 +1,6 @@
 # src/agentbx/agents/structure_factor_agent.py
 """
-Agent responsible ONLY for structure factor calculations.
+Processor responsible ONLY for structure factor calculations.
 
 Input: atomic_model_data
 Output: structure_factor_data
@@ -18,25 +18,25 @@ from typing import Dict
 from typing import List
 
 from ..core.bundle_base import Bundle
-from .base import SinglePurposeAgent
+from .base import SinglePurposeProcessor
 
 
 logger = logging.getLogger(__name__)
 
 
-class StructureFactorAgent(SinglePurposeAgent):
+class StructureFactorProcessor(SinglePurposeProcessor):
     """
-    Pure structure factor calculation agent.
+    Pure structure factor calculation processor.
 
     Responsibility: Convert atomic models to structure factors.
     """
 
     def define_input_bundle_types(self) -> List[str]:
-        """Define the input bundle types for this agent."""
+        """Define the input bundle types for this processor."""
         return ["atomic_model_data"]
 
     def define_output_bundle_types(self) -> List[str]:
-        """Define the output bundle types for this agent."""
+        """Define the output bundle types for this processor."""
         return ["structure_factor_data"]
 
     def process_bundles(self, input_bundles: Dict[str, Bundle]) -> Dict[str, Bundle]:
@@ -199,9 +199,9 @@ class StructureFactorAgent(SinglePurposeAgent):
         return f_model, scale_factors
 
     def get_computation_info(self) -> Dict[str, Any]:
-        """Return information about this agent's computation."""
+        """Return information about this processor's computation."""
         return {
-            "agent_type": "StructureFactorAgent",
+            "processor_type": "StructureFactorProcessor",
             "responsibility": "Structure factor calculation",
             "algorithms": ["direct_summation", "bulk_solvent_correction"],
             "cctbx_modules": ["cctbx.xray", "mmtbx.bulk_solvent"],

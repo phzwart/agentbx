@@ -33,14 +33,14 @@ This design enables researchers to combine cutting-edge AI predictions (protein 
 
 ## Core Architecture
 
-### 1. **Agent System**
+### 1. **Processor System**
 
-- **SinglePurposeAgent**: Base class for agents with one clear responsibility
-- **StructureFactorAgent**: Calculates structure factors from atomic models
-- **TargetAgent**: Computes target functions for refinement
-- **GradientAgent**: Calculates gradients for optimization
-- **ExperimentalDataAgent**: Handles experimental data processing
-- **AI Model Agents**: Future agents for protein structure prediction, density interpretation, etc.
+- **SinglePurposeProcessor**: Base class for processors with one clear responsibility
+- **StructureFactorProcessor**: Calculates structure factors from atomic models
+- **TargetProcessor**: Computes target functions for refinement
+- **GradientProcessor**: Calculates gradients for optimization
+- **ExperimentalDataProcessor**: Handles experimental data processing
+- **AI Model Processors**: Future processors for protein structure prediction, density interpretation, etc.
 
 ### 2. **Redis Manager**
 
@@ -68,24 +68,24 @@ This design enables researchers to combine cutting-edge AI predictions (protein 
 
 ### **Modular Design**
 
-Each agent does ONE thing well:
+Each processor does ONE thing well:
 
-- StructureFactorAgent: Only calculates structure factors
-- TargetAgent: Only computes target functions
-- AI Model Agents: Only handle AI predictions
-- No mixing of concerns between agents
+- StructureFactorProcessor: Only calculates structure factors
+- TargetProcessor: Only computes target functions
+- AI Model Processors: Only handle AI predictions
+- No mixing of concerns between processors
 
 ### **Technology Stack Separation**
 
 - **AI Models**: Can run on GPU clusters with PyTorch/TensorFlow
 - **Crystallographic Tools**: Run on CPU clusters with CCTBX/Phenix
 - **Redis Middleware**: Coordinates between different computational resources
-- **Event-Driven**: Agents react to status messages, enabling asynchronous processing
+- **Event-Driven**: Processors react to status messages, enabling asynchronous processing
 
 ### **Persistent Data Flow**
 
 - Redis stores all intermediate results
-- Agents can be restarted without losing data
+- Processors can be restarted without losing data
 - Data persists between workflow runs
 - Unique bundle IDs for tracking
 
@@ -99,8 +99,8 @@ Each agent does ONE thing well:
 ### **Scalable Architecture**
 
 - Redis enables distributed processing
-- Multiple agents can work on same data
-- Easy to add new agent types
+- Multiple processors can work on same data
+- Easy to add new processor types
 - Workflow orchestration for complex pipelines
 
 ## Example Workflow
@@ -108,7 +108,7 @@ Each agent does ONE thing well:
 1. **Download Data**: PDB structure + MTZ reflections
 2. **Create Bundle**: Package atomic model data
 3. **Store in Redis**: Persistent storage with metadata
-4. **Run Agent**: StructureFactorAgent processes data
+4. **Run Processor**: StructureFactorProcessor processes data
 5. **Store Results**: Structure factors saved back to Redis
 6. **Analyze**: Comprehensive data analysis and statistics
 
@@ -116,18 +116,18 @@ Each agent does ONE thing well:
 
 ### **AI-Assisted Structure Determination**
 
-1. **AI Model Agent**: Predicts initial protein structure from sequence
-2. **StructureFactorAgent**: Calculates structure factors from AI prediction
-3. **TargetAgent**: Computes target function comparing to experimental data
-4. **RefinementAgent**: Optimizes structure using gradients
-5. **ValidationAgent**: Assesses structure quality
+1. **AI Model Processor**: Predicts initial protein structure from sequence
+2. **StructureFactorProcessor**: Calculates structure factors from AI prediction
+3. **TargetProcessor**: Computes target function comparing to experimental data
+4. **RefinementProcessor**: Optimizes structure using gradients
+5. **ValidationProcessor**: Assesses structure quality
 
 ### **AI-Enhanced Electron Density Interpretation**
 
-1. **ExperimentalDataAgent**: Processes experimental data
-2. **AI Density Agent**: Interprets electron density using deep learning
-3. **StructureFactorAgent**: Calculates structure factors
-4. **ComparisonAgent**: Validates AI interpretation against experimental data
+1. **ExperimentalDataProcessor**: Processes experimental data
+2. **AI Density Processor**: Interprets electron density using deep learning
+3. **StructureFactorProcessor**: Calculates structure factors
+4. **ComparisonProcessor**: Validates AI interpretation against experimental data
 
 ## Use Cases
 
@@ -154,7 +154,7 @@ Each agent does ONE thing well:
 
 ### **Distributed Computing**
 
-- Multiple agents working on same dataset
+- Multiple processors working on same dataset
 - Redis as central data store
 - Scalable architecture for large datasets
 - Fault tolerance and recovery
@@ -167,7 +167,7 @@ Each agent does ONE thing well:
 - **Pydantic**: Data validation and serialization
 - **Click**: Command-line interface
 - **Poetry**: Dependency management
-- **Future**: PyTorch/TensorFlow for AI model agents
+- **Future**: PyTorch/TensorFlow for AI model processors
 
 ## Installation
 
@@ -182,69 +182,3 @@ Or install with Redis support:
 ```console
 $ pip install agentbx[redis-agents]
 ```
-
-## Quick Start
-
-### 1. Start Redis Server
-
-```bash
-redis-server
-```
-
-### 2. Download Test Data
-
-```bash
-python examples/download_pdb_data.py 1ubq
-```
-
-### 3. Run Structure Factor Calculation
-
-```bash
-python examples/redis_structure_factor_example.py
-```
-
-### 4. Use CLI Tools
-
-```bash
-# Validate files
-python -m agentbx.utils.cli validate examples/input.pdb examples/input.mtz
-
-# Analyze a bundle
-python -m agentbx.utils.cli analyze bundle_id_here
-
-# Run workflow
-python -m agentbx.utils.cli workflow examples/input.pdb examples/input.mtz
-```
-
-## Code Organization
-
-## Contributing
-
-Contributions are very welcome.
-To learn more, see the [Contributor Guide].
-
-## License
-
-Distributed under the terms of the [MIT license][license],
-_Agentbx_ is free and open source software.
-
-## Issues
-
-If you encounter any problems,
-please [file an issue] along with a detailed description.
-
-## Credits
-
-This project was generated from [@cjolowicz]'s [Hypermodern Python Cookiecutter] template.
-
-[@cjolowicz]: https://github.com/cjolowicz
-[pypi]: https://pypi.org/
-[hypermodern python cookiecutter]: https://github.com/cjolowicz/cookiecutter-hypermodern-python
-[file an issue]: https://github.com/phzwart/agentbx/issues
-[pip]: https://pip.pypa.io/
-
-<!-- github-only -->
-
-[license]: https://github.com/phzwart/agentbx/blob/main/LICENSE
-[contributor guide]: https://github.com/phzwart/agentbx/blob/main/CONTRIBUTING.md
-[command-line reference]: https://agentbx.readthedocs.io/en/latest/usage.html

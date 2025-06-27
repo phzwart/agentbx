@@ -47,7 +47,7 @@ poetry install --with redis-agents
 
 ```python
 from agentbx.core.redis_manager import RedisManager
-from agentbx.agents.structure_factor_agent import StructureFactorAgent
+from agentbx.agents.structure_factor_agent import StructureFactorProcessor
 
 # Initialize Redis manager
 redis_manager = RedisManager(
@@ -58,7 +58,7 @@ redis_manager = RedisManager(
 )
 
 # Create agent
-agent = StructureFactorAgent(redis_manager, "sf_agent_001")
+processor = StructureFactorProcessor(redis_manager, "sf_processor_001")
 
 #
 ```

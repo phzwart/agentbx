@@ -1,6 +1,6 @@
 # src/agentbx/agents/target_agent.py
 """
-Agent responsible ONLY for target function calculations.
+Processor responsible ONLY for target function calculations.
 
 Input: structure_factor_data + experimental_data
 Output: target_data
@@ -16,22 +16,22 @@ from typing import Dict
 from typing import List
 
 from ..core.bundle_base import Bundle
-from .base import SinglePurposeAgent
+from .base import SinglePurposeProcessor
 
 
-class TargetAgent(SinglePurposeAgent):
+class TargetProcessor(SinglePurposeProcessor):
     """
-    Pure target function calculation agent.
+    Pure target function calculation processor.
 
     Responsibility: Compute target values from structure factors and experimental data.
     """
 
     def define_input_bundle_types(self) -> List[str]:
-        """Define the input bundle types for this agent."""
+        """Define the input bundle types for this processor."""
         return ["experimental_data", "structure_factor_data"]
 
     def define_output_bundle_types(self) -> List[str]:
-        """Define the output bundle types for this agent."""
+        """Define the output bundle types for this processor."""
         return ["target_data"]
 
     def process_bundles(self, input_bundles: Dict[str, Bundle]) -> Dict[str, Bundle]:
@@ -210,9 +210,9 @@ class TargetAgent(SinglePurposeAgent):
         return numerator / denominator
 
     def get_computation_info(self) -> Dict[str, Any]:
-        """Return information about this agent's computation."""
+        """Return information about this processor's computation."""
         return {
-            "agent_type": "TargetAgent",
+            "processor_type": "TargetProcessor",
             "responsibility": "Target function calculation",
             "supported_targets": [
                 "maximum_likelihood",

@@ -1,6 +1,6 @@
-# Redis Structure Factor Agent Examples
+# Redis Structure Factor Processor Examples
 
-This directory contains examples demonstrating the Redis manager with the StructureFactorAgent using real crystallographic data.
+This directory contains examples demonstrating the Redis manager with the StructureFactorProcessor using real crystallographic data.
 
 ## Quick Start
 
@@ -121,6 +121,6 @@ python examples/redis_structure_factor_example.py
 - Reading real crystallographic data
 - Redis bundle storage and retrieval
 - Structure factor calculations
-- Agent workflow execution
+- Processor workflow execution
 
 ## File Structure

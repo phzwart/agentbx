@@ -1,16 +1,16 @@
-"""Agent modules for agentbx."""
+"""Processor modules for agentbx."""
 
-from .base import SinglePurposeAgent
-from .experimental_data_agent import ExperimentalDataAgent
-from .gradient_agent import GradientAgent
-from .structure_factor_agent import StructureFactorAgent
-from .target_agent import TargetAgent
+from .base import SinglePurposeProcessor
+from .experimental_data_agent import ExperimentalDataProcessor
+from .gradient_agent import GradientProcessor
+from .structure_factor_agent import StructureFactorProcessor
+from .target_agent import TargetProcessor
 
 
 __all__ = [
-    "SinglePurposeAgent",
-    "StructureFactorAgent",
-    "TargetAgent",
-    "GradientAgent",
-    "ExperimentalDataAgent",
+    "SinglePurposeProcessor",
+    "StructureFactorProcessor",
+    "TargetProcessor",
+    "GradientProcessor",
+    "ExperimentalDataProcessor",
 ]
