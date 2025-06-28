@@ -789,7 +789,7 @@ class TestIntegration:
 
         # Check for expected schemas
         expected_schemas = [
-            "atomic_model_data",
+            "xray_atomic_model_data",
             "structure_factor_data",
             "target_data",
             "gradient_data",
@@ -821,7 +821,7 @@ class TestIntegration:
 
         # Should contain classes for each schema
         expected_classes = [
-            "AtomicModelDataBundle",
+            "XrayAtomicModelDataBundle",
             "StructureFactorDataBundle",
             "TargetDataBundle",
             "GradientDataBundle",

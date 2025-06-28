@@ -1,6 +1,6 @@
 """Schema modules for agentbx."""
 
-from .generated import AtomicModelDataBundle
+from .generated import XrayAtomicModelDataBundle
 from .generated import ExperimentalDataBundle
 from .generated import GradientDataBundle
 from .generated import StructureFactorDataBundle
@@ -12,7 +12,7 @@ __all__ = [
     "SchemaGenerator",
     "TargetDataBundle",
     "GradientDataBundle",
-    "AtomicModelDataBundle",
+    "XrayAtomicModelDataBundle",
     "ExperimentalDataBundle",
     "StructureFactorDataBundle",
 ]

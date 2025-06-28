@@ -232,7 +232,7 @@ def create_simple_structure_factor_workflow(
         step_name="calculate_structure_factors",
         processor_class=StructureFactorProcessor,
         processor_id="sf_processor_workflow",
-        input_bundle_types=["atomic_model_data"],
+        input_bundle_types=["xray_atomic_model_data"],
         output_bundle_types=["structure_factor_data"],
     )
 
@@ -240,7 +240,7 @@ def create_simple_structure_factor_workflow(
     atomic_bundle = create_atomic_model_bundle(pdb_file, mtz_file)
     input_bundle_id = redis_manager.store_bundle(atomic_bundle)
 
-    return workflow_mgr, {"atomic_model_data": input_bundle_id}
+    return workflow_mgr, {"xray_atomic_model_data": input_bundle_id}
 
 
 def execute_structure_factor_workflow(

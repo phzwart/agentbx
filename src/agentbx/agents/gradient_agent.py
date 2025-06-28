@@ -2,7 +2,7 @@
 """
 Processor responsible ONLY for gradient calculations via chain rule.
 
-Input: structure_factor_data + target_data + atomic_model_data
+Input: structure_factor_data + target_data + xray_atomic_model_data
 Output: gradient_data
 
 Applies chain rule: dT/dx = dT/dF * dF/dx
@@ -25,7 +25,7 @@ class GradientProcessor(SinglePurposeProcessor):
 
     def define_input_bundle_types(self) -> List[str]:
         """Define the input bundle types for this processor."""
-        return ["structure_factor_data", "target_data", "atomic_model_data"]
+        return ["structure_factor_data", "target_data", "xray_atomic_model_data"]
 
     def define_output_bundle_types(self) -> List[str]:
         """Define the output bundle types for this processor."""
@@ -39,7 +39,7 @@ class GradientProcessor(SinglePurposeProcessor):
         """
         sf_data = input_bundles["structure_factor_data"]
         target_data = input_bundles["target_data"]
-        atomic_data = input_bundles["atomic_model_data"]
+        atomic_data = input_bundles["xray_atomic_model_data"]
 
         # Get target gradients w.r.t. structure factors (dT/dF)
         target_sf_grads = target_data.get_asset("target_gradients_wrt_sf")
@@ -178,3 +178,7 @@ class GradientProcessor(SinglePurposeProcessor):
             "cctbx_modules": ["cctbx.examples.structure_factor_derivatives"],
             "mathematics": "dT/dx = dT/dF * dF/dx",
         }
+
+    def get_required_input_bundle_types(self) -> List[str]:
+        """Return the required input bundle types."""
+        return ["structure_factor_data", "target_data", "xray_atomic_model_data"]

@@ -612,7 +612,7 @@ def main() -> int:
 
         # Show usage hint
         print("\n💡 Usage:")
-        print(f"   from {args.output.stem} import AtomicModelDataBundle")
+        print(f"   from {args.output.stem} import XrayAtomicModelDataBundle")
 
         if args.watch:
             watch_for_changes(generator, args.schemas_dir, args.output, args.verbose)

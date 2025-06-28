@@ -9,7 +9,7 @@ from .core.bundle_base import Bundle
 from .core.config import AgentConfig
 from .core.config import RedisConfig
 from .core.redis_manager import RedisManager
-from .schemas.generated import AtomicModelDataBundle
+from .schemas.generated import XrayAtomicModelDataBundle
 from .schemas.generated import ExperimentalDataBundle
 from .schemas.generated import GradientDataBundle
 from .schemas.generated import StructureFactorDataBundle
@@ -29,7 +29,7 @@ __all__ = [
     "RedisConfig",
     "AgentConfig",
     "RedisManager",
-    "AtomicModelDataBundle",
+    "XrayAtomicModelDataBundle",
     "ExperimentalDataBundle",
     "GradientDataBundle",
     "StructureFactorDataBundle",

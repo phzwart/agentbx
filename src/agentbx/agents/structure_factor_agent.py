@@ -2,7 +2,7 @@
 """
 Processor responsible ONLY for structure factor calculations.
 
-Input: atomic_model_data
+Input: xray_atomic_model_data
 Output: structure_factor_data
 
 Does NOT know about:
@@ -33,7 +33,7 @@ class StructureFactorProcessor(SinglePurposeProcessor):
 
     def define_input_bundle_types(self) -> List[str]:
         """Define the input bundle types for this processor."""
-        return ["atomic_model_data"]
+        return ["xray_atomic_model_data"]
 
     def define_output_bundle_types(self) -> List[str]:
         """Define the output bundle types for this processor."""
@@ -45,7 +45,7 @@ class StructureFactorProcessor(SinglePurposeProcessor):
         """
         logger.info("Starting structure factor calculation...")
 
-        atomic_model = input_bundles["atomic_model_data"]
+        atomic_model = input_bundles["xray_atomic_model_data"]
 
         # Extract CCTBX objects
         xray_structure = atomic_model.get_asset("xray_structure")
@@ -206,3 +206,7 @@ class StructureFactorProcessor(SinglePurposeProcessor):
             "algorithms": ["direct_summation", "bulk_solvent_correction"],
             "cctbx_modules": ["cctbx.xray", "mmtbx.bulk_solvent"],
         }
+
+    def get_required_input_bundle_types(self) -> List[str]:
+        """Return the required input bundle types."""
+        return ["xray_atomic_model_data"]

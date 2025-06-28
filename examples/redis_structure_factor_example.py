@@ -123,7 +123,7 @@ def main():
         logger.info(f"Stored atomic model bundle with ID: {input_bundle_id}")
 
         # Run the processor
-        input_bundle_ids = {"atomic_model_data": input_bundle_id}
+        input_bundle_ids = {"xray_atomic_model_data": input_bundle_id}
         output_bundle_ids = processor.run(input_bundle_ids)
         logger.info(
             f"Manual execution completed. Output bundle IDs: {output_bundle_ids}"
@@ -139,7 +139,7 @@ def main():
         logger.info(f"\nAll bundles in Redis: {all_bundles}")
 
         # List bundles by type
-        atomic_bundles = redis_manager.list_bundles("atomic_model_data")
+        atomic_bundles = redis_manager.list_bundles("xray_atomic_model_data")
         sf_bundles = redis_manager.list_bundles("structure_factor_data")
         logger.info(f"Atomic model bundles: {len(atomic_bundles)}")
         logger.info(f"Structure factor bundles: {len(sf_bundles)}")

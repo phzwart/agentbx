@@ -203,7 +203,7 @@ def create_atomic_model_bundle(
         miller_indices = _create_synthetic_miller_indices(xray_structure)
 
     # Create bundle
-    bundle = Bundle(bundle_type="atomic_model_data")
+    bundle = Bundle(bundle_type="xray_atomic_model_data")
     bundle.add_asset("xray_structure", xray_structure)
     bundle.add_asset("miller_indices", miller_indices)
 

@@ -64,24 +64,24 @@ validation_rules:
 
 workflow_patterns:
   chain_rule_computation:
-    - requires: [target_data.target_gradients_wrt_sf, structure_factor_data]
+    - requires: [xray_atomic_model_data, target_data]
     - method: "chain_rule"
-    - produces: [coordinate_gradients]
+    - produces: [coordinate_gradients, bfactor_gradients]
 
   finite_difference_verification:
-    - requires: [atomic_model_data, target_data]
-    - method: "finite_differences"
+    - requires: [xray_atomic_model_data, target_data]
+    - method: "finite_difference"
     - produces: [coordinate_gradients]
-    - use_case: "validation"
+    - use_case: "verification"
 
   full_parameter_gradients:
     - produces: [coordinate_gradients, bfactor_gradients, occupancy_gradients]
-    - enables: [full_refinement]
+    - enables: ["refinement", "optimization"]
 
 dependencies:
+  - xray_atomic_model_data # parameter definitions
   - target_data # dT/dF gradients
   - structure_factor_data # dF/d(params) gradients
-  - atomic_model_data # parameter definitions
 
 produces_for:
   - optimization_data # Gradients for parameter updates
