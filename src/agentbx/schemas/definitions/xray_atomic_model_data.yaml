@@ -1,0 +1,74 @@
+# src/agentbx/schemas/definitions/xray_atomic_model_data.yaml
+# Pure atomic model representation - no target functions, no gradients
+
+task_type: xray_atomic_model_data
+description: "Atomic model data for structure factor calculations"
+
+required_assets:
+  - xray_structure
+  - miller_indices
+
+optional_assets:
+  - bulk_solvent_params
+  - anisotropic_scaling_params
+  - model_metadata
+
+asset_definitions:
+  xray_structure:
+    description: "CCTBX xray.structure object with atomic model"
+    data_type: "cctbx.xray.structure"
+    required_methods: ["scatterers", "unit_cell", "space_group", "sites_cart"]
+    checksum_required: true
+
+  miller_indices:
+    description: "Miller indices for structure factor calculation"
+    data_type: "cctbx.miller.set"
+    required_attributes: ["indices", "unit_cell", "space_group"]
+    checksum_required: true
+
+  bulk_solvent_params:
+    description: "Bulk solvent correction parameters"
+    data_type: "dict"
+    required_keys: ["k_sol", "b_sol"]
+    default_values:
+      k_sol: 0.35
+      b_sol: 50.0
+
+  anisotropic_scaling_params:
+    description: "Anisotropic scaling parameters"
+    data_type: "dict"
+    required_keys: ["b11", "b22", "b33", "b12", "b13", "b23"]
+
+  model_metadata:
+    description: "Model provenance and quality info"
+    data_type: "dict"
+    expected_keys: ["resolution", "space_group_symbol", "n_atoms", "source"]
+
+validation_rules:
+  xray_structure:
+    - has_scatterers: true
+    - valid_space_group: true
+    - positive_unit_cell: true
+    - finite_coordinates: true
+
+  miller_indices:
+    - indices_not_empty: true
+    - valid_space_group: true
+    - consistent_symmetry_with_xray_structure: true
+
+  bulk_solvent_params:
+    - k_sol_range: [0.0, 1.0]
+    - b_sol_range: [0.0, 200.0]
+
+workflow_patterns:
+  initialization:
+    - requires: [xray_structure, miller_indices]
+    - validates: ["symmetry_consistency", "coordinate_sanity"]
+
+  update_coordinates:
+    - modifies: [xray_structure]
+    - preserves: [miller_indices, bulk_solvent_params]
+
+  update_b_factors:
+    - modifies: [xray_structure]
+    - preserves: [miller_indices]
