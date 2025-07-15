@@ -1,19 +1,20 @@
 """AgentBX: Crystallographic data processing and analysis framework."""
 
-from .agents.base import SinglePurposeProcessor
-from .agents.experimental_data_agent import ExperimentalDataProcessor
-from .agents.gradient_agent import GradientProcessor
-from .agents.structure_factor_agent import StructureFactorProcessor
-from .agents.target_agent import TargetProcessor
 from .core.bundle_base import Bundle
 from .core.config import AgentConfig
 from .core.config import RedisConfig
 from .core.redis_manager import RedisManager
-from .schemas.generated import XrayAtomicModelDataBundle
+from .processors.base import SinglePurposeProcessor
+from .processors.experimental_data_processor import ExperimentalDataProcessor
+from .processors.geometry_processor import CctbxGeometryProcessor
+from .processors.gradient_processor import GradientProcessor
+from .processors.structure_factor_processor import StructureFactorProcessor
+from .processors.target_processor import TargetProcessor
 from .schemas.generated import ExperimentalDataBundle
 from .schemas.generated import GradientDataBundle
 from .schemas.generated import StructureFactorDataBundle
 from .schemas.generated import TargetDataBundle
+from .schemas.generated import XrayAtomicModelDataBundle
 from .utils.cli import main
 
 
@@ -25,6 +26,7 @@ __all__ = [
     "TargetProcessor",
     "GradientProcessor",
     "ExperimentalDataProcessor",
+    "CctbxGeometryProcessor",
     "Bundle",
     "RedisConfig",
     "AgentConfig",

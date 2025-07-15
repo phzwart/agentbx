@@ -69,4 +69,92 @@ class TargetProcessor(SinglePurposeProcessor):
         target_bundle.add_asset("r_factors", result["r_factors"])
 
         # Add target-specific results
-        if "likelihood_parameters" in result 
+        if "likelihood_parameters" in result:
+            target_bundle.add_asset(
+                "likelihood_parameters", result["likelihood_parameters"]
+            )
+
+        if "target_gradients_wrt_sf" in result:
+            target_bundle.add_asset(
+                "target_gradients_wrt_sf", result["target_gradients_wrt_sf"]
+            )
+
+        return {"target_data": target_bundle}
+
+    def _calculate_ml_target(self, f_model: Any, f_obs: Any, exp_data: Any) -> Dict[str, Any]:
+        """
+        Calculate maximum likelihood target.
+        """
+        # This is a placeholder implementation
+        # In practice, this would use CCTBX's maximum likelihood calculation
+        
+        # For now, return mock results
+        result = {
+            "target_value": 0.0,  # Placeholder
+            "r_factors": {"R": 0.0, "R_free": 0.0},  # Placeholder
+            "likelihood_parameters": {"alpha": 1.0, "beta": 1.0},  # Placeholder
+            "target_gradients_wrt_sf": None,  # Placeholder
+        }
+        
+        return result
+
+    def _calculate_ls_target(self, f_model: Any, f_obs: Any, exp_data: Any) -> Dict[str, Any]:
+        """
+        Calculate least squares target.
+        """
+        # This is a placeholder implementation
+        # In practice, this would use CCTBX's least squares calculation
+        
+        # For now, return mock results
+        result = {
+            "target_value": 0.0,  # Placeholder
+            "r_factors": {"R": 0.0, "R_free": 0.0},  # Placeholder
+            "target_gradients_wrt_sf": None,  # Placeholder
+        }
+        
+        return result
+
+    def _calculate_lsf_target(self, f_model: Any, f_obs: Any, exp_data: Any) -> Dict[str, Any]:
+        """
+        Calculate least squares on F target.
+        """
+        # This is a placeholder implementation
+        # In practice, this would use CCTBX's least squares on F calculation
+        
+        # For now, return mock results
+        result = {
+            "target_value": 0.0,  # Placeholder
+            "r_factors": {"R": 0.0, "R_free": 0.0},  # Placeholder
+            "target_gradients_wrt_sf": None,  # Placeholder
+        }
+        
+        return result
+
+    def calculate_target(
+        self, 
+        sf_bundle_id: str, 
+        exp_bundle_id: str,
+        target_type: str = None
+    ) -> str:
+        """
+        Calculate target function from structure factor and experimental data bundles.
+        """
+        # Process the bundles
+        output_ids = self.run({
+            "structure_factor_data": sf_bundle_id,
+            "experimental_data": exp_bundle_id
+        })
+        return output_ids["target_data"]
+
+    def get_computation_info(self) -> Dict[str, Any]:
+        """
+        Get information about this processor's computational requirements.
+        """
+        return {
+            "processor_type": "target_processor",
+            "input_types": ["experimental_data", "structure_factor_data"],
+            "output_types": ["target_data"],
+            "memory_usage": "medium",
+            "cpu_usage": "medium",
+            "gpu_usage": "none",
+        }

@@ -33,18 +33,41 @@ asset_definitions:
   restraint_energies:
     description: "Individual restraint energies by type"
     data_type: "dict"
-    expected_keys: ["bond_energy", "angle_energy", "dihedral_energy", "chirality_energy", "planarity_energy", "total_energy"]
+    expected_keys:
+      [
+        "bond_energy",
+        "angle_energy",
+        "dihedral_energy",
+        "chirality_energy",
+        "planarity_energy",
+        "total_energy",
+      ]
     units: "energy_units"
 
   restraint_counts:
     description: "Number of restraints by type"
     data_type: "dict"
-    expected_keys: ["bond_proxies", "angle_proxies", "dihedral_proxies", "chirality_proxies", "planarity_proxies", "total_restraints"]
+    expected_keys:
+      [
+        "bond_proxies",
+        "angle_proxies",
+        "dihedral_proxies",
+        "chirality_proxies",
+        "planarity_proxies",
+        "total_restraints",
+      ]
 
   geometry_metadata:
     description: "Metadata about geometry restraint computation"
     data_type: "dict"
-    expected_keys: ["computation_method", "restraint_types_used", "gradient_norm", "max_gradient", "computation_time"]
+    expected_keys:
+      [
+        "computation_method",
+        "restraint_types_used",
+        "gradient_norm",
+        "max_gradient",
+        "computation_time",
+      ]
 
 validation_rules:
   coordinates:
@@ -78,7 +101,14 @@ workflow_patterns:
 
   full_geometry_analysis:
     - requires: [xray_atomic_model_data]
-    - produces: [coordinates, geometric_gradients, restraint_energies, restraint_counts, geometry_metadata]
+    - produces:
+        [
+          coordinates,
+          geometric_gradients,
+          restraint_energies,
+          restraint_counts,
+          geometry_metadata,
+        ]
     - method: "cctbx_complete_geometry_analysis"
 
 dependencies:
@@ -87,4 +117,4 @@ dependencies:
 produces_for:
   - optimization_data # Gradients for coordinate optimization
   - convergence_data # Gradient norms for convergence monitoring
-  - validation_data # Geometry quality assessment 
+  - validation_data # Geometry quality assessment

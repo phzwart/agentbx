@@ -12,8 +12,8 @@ Does NOT know about:
 """
 
 import logging
-import time
 import os
+import time
 from typing import Any
 from typing import Dict
 from typing import List
@@ -71,11 +71,11 @@ class CctbxGeometryProcessor(SinglePurposeProcessor):
         """
         # This is a placeholder implementation
         # In practice, this would use CCTBX's geometry restraints
-        
+
         # For now, return a mock gradient object
         # In real implementation, this would be:
         # gradients = xray_structure.geometry_gradients()
-        
+
         return None  # Placeholder
 
     def _calculate_gradient_norm(self, geometry_gradients: Any) -> float:
@@ -106,55 +106,3 @@ class CctbxGeometryProcessor(SinglePurposeProcessor):
             "cpu_usage": "medium",
             "gpu_usage": "none",
         }
-```
-
-Now let me create the new `__init__.py` file for the processors directory:
-
-```python:src/agentbx/processors/__init__.py
-"""Processor modules for agentbx."""
-
-from .base import SinglePurposeProcessor
-from .experimental_data_processor import ExperimentalDataProcessor
-from .gradient_processor import GradientProcessor
-from .structure_factor_processor import StructureFactorProcessor
-from .target_processor import TargetProcessor
-from .geometry_processor import CctbxGeometryProcessor
-
-
-__all__ = [
-    "SinglePurposeProcessor",
-    "StructureFactorProcessor",
-    "TargetProcessor",
-    "GradientProcessor",
-    "ExperimentalDataProcessor",
-    "CctbxGeometryProcessor",
-]
-```
-
-Now I need to update the main `__init__.py` file to import from the new processors directory:
-
-```python:src/agentbx/__init__.py
-"""AgentBX: Crystallographic data processing and analysis framework."""
-
-from .processors.base import SinglePurposeProcessor
-from .processors.experimental_data_processor import ExperimentalDataProcessor
-from .processors.gradient_processor import GradientProcessor
-from .processors.structure_factor_processor import StructureFactorProcessor
-from .processors.target_processor import TargetProcessor
-from .processors.geometry_processor import CctbxGeometryProcessor
-from .core.bundle_base import Bundle
-from .core.config import AgentConfig
-from .core.config import RedisConfig
-from .core.redis_manager import RedisManager
-from .schemas.generated import XrayAtomicModelDataBundle
-from .schemas.generated import ExperimentalDataBundle
-from .schemas.generated import GradientDataBundle
-from .schemas.generated import StructureFactorDataBundle
-from .schemas.generated import TargetDataBundle
-from .utils.cli import main
-
-
-__version__ = "0.1.0"
-
-__all__ = [
-    "SinglePurp 

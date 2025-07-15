@@ -52,7 +52,7 @@ class StructureFactorProcessor(SinglePurposeProcessor):
 
         # Calculate structure factors
         f_calc = self._calculate_f_calc(xray_structure)
-        
+
         # Calculate bulk solvent if needed
         f_model = self._calculate_bulk_solvent(f_calc, xray_structure)
 
@@ -62,10 +62,10 @@ class StructureFactorProcessor(SinglePurposeProcessor):
         # Create structure factor bundle
         sf_bundle = Bundle(bundle_type="structure_factor_data")
         sf_bundle.add_asset("f_calc", f_calc)
-        
+
         if f_model is not None:
             sf_bundle.add_asset("f_model", f_model)
-            
+
         if sf_gradients_wrt_params is not None:
             sf_bundle.add_asset("sf_gradients_wrt_params", sf_gradients_wrt_params)
 
@@ -81,11 +81,11 @@ class StructureFactorProcessor(SinglePurposeProcessor):
         """
         # This is a placeholder implementation
         # In practice, this would use CCTBX's structure factor calculation
-        
+
         # For now, return a mock structure factor object
         # In real implementation, this would be:
         # f_calc = xray_structure.structure_factors(d_min=resolution).f_calc()
-        
+
         return None  # Placeholder
 
     def _calculate_bulk_solvent(self, f_calc: Any, xray_structure: Any) -> Any:
@@ -94,11 +94,11 @@ class StructureFactorProcessor(SinglePurposeProcessor):
         """
         # This is a placeholder implementation
         # In practice, this would apply bulk solvent correction
-        
+
         # For now, return None (no bulk solvent)
         # In real implementation, this would be:
         # f_model = f_calc.bulk_solvent_corrected()
-        
+
         return None  # Placeholder
 
     def _calculate_sf_gradients(self, xray_structure: Any, f_calc: Any) -> Any:
@@ -107,18 +107,15 @@ class StructureFactorProcessor(SinglePurposeProcessor):
         """
         # This is a placeholder implementation
         # In practice, this would calculate analytical gradients
-        
+
         # For now, return None (no gradients)
         # In real implementation, this would be:
         # gradients = f_calc.gradients_wrt_atomic_parameters()
-        
+
         return None  # Placeholder
 
     def calculate_structure_factors(
-        self, 
-        model_bundle_id: str, 
-        d_min: float = None,
-        include_gradients: bool = False
+        self, model_bundle_id: str, d_min: float = None, include_gradients: bool = False
     ) -> str:
         """
         Calculate structure factors from atomic model bundle.
@@ -138,4 +135,4 @@ class StructureFactorProcessor(SinglePurposeProcessor):
             "memory_usage": "medium",
             "cpu_usage": "high",
             "gpu_usage": "optional",
-        } 
+        }

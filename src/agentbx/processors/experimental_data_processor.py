@@ -205,7 +205,9 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         if r_free_flags is not None:
             r_free_fraction = r_free_flags.data().count(True) / r_free_flags.size()
             if r_free_fraction < 0.01 or r_free_fraction > 0.2:
-                print(f"Warning: R_free fraction ({r_free_fraction:.3f}) outside normal range")
+                print(
+                    f"Warning: R_free fraction ({r_free_fraction:.3f}) outside normal range"
+                )
 
     def _determine_target_preferences(
         self, f_obs: Any, sigmas: Any, metadata: Dict[str, Any]
@@ -227,7 +229,7 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         if sigmas is not None:
             sigma_f_ratios = sigmas.data() / f_obs.data()
             mean_sigma_f = sigma_f_ratios.mean()
-            
+
             if mean_sigma_f > 0.5:
                 # High noise - prefer least squares
                 preferences["default_target"] = "least_squares"
@@ -244,23 +246,24 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         """
         Generate R_free flags if not present.
         """
-        from cctbx import miller
-
         # Create random R_free flags
         import random
+
+        from cctbx import miller
+
         random.seed(42)  # For reproducibility
-        
+
         flags = miller.build_set(
             crystal_symmetry=f_obs.crystal_symmetry(),
             anomalous_flag=f_obs.anomalous_flag(),
             d_min=f_obs.d_min(),
             d_max=f_obs.d_max(),
         )
-        
+
         # Set random fraction as R_free
         data = [random.random() < fraction for _ in range(flags.size())]
         flags = flags.array(data=data)
-        
+
         return flags
 
     def process_mtz_file(
@@ -336,11 +339,13 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
 
         if sigmas is not None:
             sigma_f_ratios = sigmas.data() / f_obs.data()
-            analysis.update({
-                "mean_sigma_f": float(sigma_f_ratios.mean()),
-                "median_sigma_f": float(sigma_f_ratios.median()),
-                "completeness": self._calculate_completeness(f_obs),
-            })
+            analysis.update(
+                {
+                    "mean_sigma_f": float(sigma_f_ratios.mean()),
+                    "median_sigma_f": float(sigma_f_ratios.median()),
+                    "completeness": self._calculate_completeness(f_obs),
+                }
+            )
 
         return analysis
 
@@ -363,4 +368,4 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
             "memory_usage": "low",
             "cpu_usage": "medium",
             "gpu_usage": "none",
-        } 
+        }
