@@ -1,4 +1,4 @@
-# src/agentbx/agents/base.py
+# src/agentbx/processors/base.py
 """
 Base classes for agentbx processors.
 
@@ -89,4 +89,4 @@ class SinglePurposeProcessor(BaseClient, ABC):
             bundle_id = self.store_bundle(bundle)
             output_ids[bundle_type] = bundle_id
 
-        return output_ids
+        return output_ids 

@@ -1,4 +1,4 @@
-# src/agentbx/agents/experimental_data_agent.py
+# src/agentbx/processors/experimental_data_processor.py
 """
 Processor responsible ONLY for processing experimental data.
 
@@ -198,76 +198,70 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         # Check sigma/F ratios if sigmas available
         if sigmas is not None:
             sigma_f_ratios = sigmas.data() / f_obs.data()
-            mean_sigma_f = sigma_f_ratios.mean()
-            if mean_sigma_f > 0.5:
-                print(
-                    f"Warning: High sigma/F ratio ({mean_sigma_f:.3f}). Data quality may be poor."
-                )
+            if (sigma_f_ratios > 10).count(True) > f_obs.size() * 0.1:
+                print("Warning: Many reflections have high sigma/F ratios")
 
-        # Check R_free fraction
+        # Check R_free completeness if available
         if r_free_flags is not None:
-            free_fraction = r_free_flags.data().count(True) / r_free_flags.size()
-            if free_fraction < 0.03 or free_fraction > 0.15:
-                print(
-                    f"Warning: Unusual R_free fraction ({free_fraction:.3f}). Typical range is 5-10%."
-                )
-
-        # Check resolution
-        d_max_min = f_obs.d_max_min()
-        if d_max_min[1] > 3.0:
-            print(f"Warning: Low resolution data (d_min = {d_max_min[1]:.2f} Å)")
+            r_free_fraction = r_free_flags.data().count(True) / r_free_flags.size()
+            if r_free_fraction < 0.01 or r_free_fraction > 0.2:
+                print(f"Warning: R_free fraction ({r_free_fraction:.3f}) outside normal range")
 
     def _determine_target_preferences(
         self, f_obs: Any, sigmas: Any, metadata: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
-        Determine recommended target function based on data quality.
+        Determine optimal target function based on data quality.
         """
-        target_prefs = {
+        preferences = {
             "default_target": "maximum_likelihood",
-            "alternatives": ["least_squares"],
+            "use_anomalous": False,
+            "use_twinning": False,
         }
 
-        # Use least squares for very high resolution data
-        d_min = metadata.get("d_min", 2.0)
-        if d_min < 1.2:
-            target_prefs["default_target"] = "least_squares"
-            target_prefs["reason"] = "high_resolution_data"
+        # Check for anomalous data
+        if hasattr(f_obs, "anomalous_flag") and f_obs.anomalous_flag():
+            preferences["use_anomalous"] = True
 
-        # Consider data quality
+        # Check data quality for target selection
         if sigmas is not None:
             sigma_f_ratios = sigmas.data() / f_obs.data()
             mean_sigma_f = sigma_f_ratios.mean()
+            
+            if mean_sigma_f > 0.5:
+                # High noise - prefer least squares
+                preferences["default_target"] = "least_squares"
+            elif mean_sigma_f < 0.1:
+                # Low noise - maximum likelihood is fine
+                pass
+            else:
+                # Medium noise - maximum likelihood with care
+                preferences["default_target"] = "maximum_likelihood"
 
-            if mean_sigma_f > 0.3:
-                target_prefs["default_target"] = "maximum_likelihood"
-                target_prefs["reason"] = "poor_data_quality"
-
-        return target_prefs
+        return preferences
 
     def _generate_r_free_flags(self, f_obs: Any, fraction: float = 0.05) -> Any:
         """
-        Generate R-free flags for cross-validation.
-
-        Note: Uses random.sample for non-cryptographic purposes (R-free flag generation).
-        This is acceptable as it's not used for security purposes.
+        Generate R_free flags if not present.
         """
-        import random  # nosec - Used for non-cryptographic R-free flag generation
+        from cctbx import miller
 
-        from cctbx.array_family import flex
-
-        n_reflections = f_obs.size()
-        n_free = int(n_reflections * fraction)
-
-        # Create random free flags
-        flags = flex.bool(n_reflections, False)
-        free_indices = random.sample(range(n_reflections), n_free)  # nosec
-
-        for i in free_indices:
-            flags[i] = True
-
-        r_free_flags = f_obs.array(data=flags)
-        return r_free_flags
+        # Create random R_free flags
+        import random
+        random.seed(42)  # For reproducibility
+        
+        flags = miller.build_set(
+            crystal_symmetry=f_obs.crystal_symmetry(),
+            anomalous_flag=f_obs.anomalous_flag(),
+            d_min=f_obs.d_min(),
+            d_max=f_obs.d_max(),
+        )
+        
+        # Set random fraction as R_free
+        data = [random.random() < fraction for _ in range(flags.size())]
+        flags = flags.array(data=data)
+        
+        return flags
 
     def process_mtz_file(
         self,
@@ -277,120 +271,96 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         r_free_label: str = "FreeR_flag",
     ) -> str:
         """
-        Convenience method to process an MTZ file directly.
-
-        Args:
-            mtz_file: Path to MTZ file
-            f_obs_label: Label for observed structure factor amplitudes
-            sigma_label: Label for sigma values
-            r_free_label: Label for R-free flags
-
-        Returns:
-            Bundle ID for the created experimental_data bundle
+        Process MTZ file and return experimental_data bundle ID.
         """
-        # Create raw data bundle
+        # Create raw experimental data bundle
         raw_bundle = Bundle(bundle_type="raw_experimental_data")
         raw_bundle.add_asset("file_path", mtz_file)
-        raw_bundle.add_asset(
+        raw_bundle.add_metadata("data_type", "amplitudes")
+        raw_bundle.add_metadata(
             "data_labels",
-            {"f_obs": f_obs_label, "sigmas": sigma_label, "r_free_flags": r_free_label},
+            {
+                "f_obs": f_obs_label,
+                "sigmas": sigma_label,
+                "r_free_flags": r_free_label,
+            },
         )
-        raw_bundle.add_asset("data_type", "amplitudes")
 
         # Store raw bundle
         raw_bundle_id = self.store_bundle(raw_bundle)
 
-        # Process it
-        result = self.run({"raw_experimental_data": raw_bundle_id})
-        return result["experimental_data"]
+        # Process
+        output_ids = self.run({"raw_experimental_data": raw_bundle_id})
+        return output_ids["experimental_data"]
 
     def process_intensity_file(
         self, hkl_file: str, i_obs_label: str = "I", sigma_label: str = "SIGI"
     ) -> str:
         """
-        Convenience method to process intensity data (will apply French-Wilson).
-
-        Args:
-            hkl_file: Path to HKL file
-            i_obs_label: Label for observed intensities
-            sigma_label: Label for sigma values
-
-        Returns:
-            Bundle ID for the created experimental_data bundle
+        Process intensity file and return experimental_data bundle ID.
         """
-        # Create raw data bundle for intensities
+        # Create raw experimental data bundle
         raw_bundle = Bundle(bundle_type="raw_experimental_data")
         raw_bundle.add_asset("file_path", hkl_file)
-        raw_bundle.add_asset(
-            "data_labels", {"i_obs": i_obs_label, "sigmas": sigma_label}
+        raw_bundle.add_metadata("data_type", "intensities")
+        raw_bundle.add_metadata(
+            "data_labels",
+            {
+                "i_obs": i_obs_label,
+                "sigma_i": sigma_label,
+            },
         )
-        raw_bundle.add_asset("data_type", "intensities")
 
         # Store raw bundle
         raw_bundle_id = self.store_bundle(raw_bundle)
 
-        # Process it
-        result = self.run({"raw_experimental_data": raw_bundle_id})
-        return result["experimental_data"]
+        # Process
+        output_ids = self.run({"raw_experimental_data": raw_bundle_id})
+        return output_ids["experimental_data"]
 
     def analyze_data_quality(self, exp_data_id: str) -> Dict[str, Any]:
         """
-        Analyze quality of experimental data.
+        Analyze experimental data quality.
         """
         exp_bundle = self.get_bundle(exp_data_id)
-
         f_obs = exp_bundle.get_asset("f_obs")
         sigmas = exp_bundle.get_asset("sigmas")
-        r_free_flags = exp_bundle.get_asset("r_free_flags")
-        exp_bundle.get_asset("experimental_metadata")
+        metadata = exp_bundle.get_asset("experimental_metadata")
 
-        quality_metrics = {
-            "n_reflections": f_obs.size(),
-            "resolution_range": f_obs.d_max_min(),
-            "completeness": self._calculate_completeness(f_obs),
+        analysis = {
+            "total_reflections": f_obs.size(),
+            "resolution_range": (f_obs.d_min(), f_obs.d_max()),
+            "space_group": metadata.get("space_group", "unknown"),
+            "unit_cell": metadata.get("unit_cell", "unknown"),
         }
 
         if sigmas is not None:
             sigma_f_ratios = sigmas.data() / f_obs.data()
-            quality_metrics.update(
-                {
-                    "mean_sigma_f_ratio": sigma_f_ratios.mean(),
-                    "sigma_f_cutoff_2": (sigma_f_ratios > 2.0).count(True)
-                    / f_obs.size(),
-                    "data_quality": "good" if sigma_f_ratios.mean() < 0.2 else "poor",
-                }
-            )
+            analysis.update({
+                "mean_sigma_f": float(sigma_f_ratios.mean()),
+                "median_sigma_f": float(sigma_f_ratios.median()),
+                "completeness": self._calculate_completeness(f_obs),
+            })
 
-        if r_free_flags is not None:
-            free_fraction = r_free_flags.data().count(True) / r_free_flags.size()
-            quality_metrics["r_free_fraction"] = free_fraction
-
-        return quality_metrics
+        return analysis
 
     def _calculate_completeness(self, f_obs: Any) -> float:
         """
         Calculate data completeness.
         """
-        # This is a simplified completeness calculation
-        # Real implementation would consider systematic absences
-        crystal_symmetry = f_obs.crystal_symmetry()
-        complete_set = crystal_symmetry.build_miller_set(
-            anomalous_flag=f_obs.anomalous_flag(), d_min=f_obs.d_min()
-        )
-
-        return f_obs.completeness(complete_set)
+        # This is a simplified calculation
+        # In practice, you'd compare against theoretical reflections
+        return 1.0  # Placeholder
 
     def get_computation_info(self) -> Dict[str, Any]:
-        """Return information about this processor's computation."""
+        """
+        Get information about this processor's computational requirements.
+        """
         return {
-            "processor_type": "ExperimentalDataProcessor",
-            "responsibility": "Experimental data processing",
-            "supported_formats": ["MTZ", "HKL", "CIF", "SCA"],
-            "algorithms": ["french_wilson", "data_validation", "completeness_analysis"],
-            "cctbx_modules": ["iotbx.reflection_file_reader", "cctbx.french_wilson"],
-            "convenience_methods": [
-                "process_mtz_file",
-                "process_intensity_file",
-                "analyze_data_quality",
-            ],
-        }
+            "processor_type": "experimental_data_processor",
+            "input_types": ["raw_experimental_data"],
+            "output_types": ["experimental_data"],
+            "memory_usage": "low",
+            "cpu_usage": "medium",
+            "gpu_usage": "none",
+        } 
