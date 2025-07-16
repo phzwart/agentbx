@@ -1,6 +1,6 @@
 """Client modules for agentbx."""
 
-from .base_client import BaseClient
+from ..base_client import BaseClient
 from .optimization_client import OptimizationClient
 from .coordinate_optimizer import CoordinateOptimizer
 from .bfactor_optimizer import BFactorOptimizer

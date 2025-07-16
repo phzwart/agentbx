@@ -20,7 +20,7 @@ from pydantic import BaseModel, Field
 from ..redis_manager import RedisManager
 from ..bundle_base import Bundle
 from ..processors.geometry_processor import CctbxGeometryProcessor
-from ..schemas.generated import AgentSecurityBundle, AgentConfigurationBundle, RedisStreamsBundle
+from ...schemas.generated import AgentSecurityBundle, AgentConfigurationBundle, RedisStreamsBundle
 
 
 @dataclass

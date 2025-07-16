@@ -42,4 +42,70 @@
 - Document results, issues, and next ideas in this file for future reference.
 
 ---
-*Append below this line for future development notes and next steps.* 
+*Append below this line for future development notes and next steps.*
+
+## Development Session: Clean Data Loading Infrastructure
+
+**Date:** Current session
+
+### What Was Accomplished
+
+1. **Created Clean Data Loading Infrastructure** (`src/agentbx/utils/data_loader.py`):
+   - Unified `DataLoader` class that consolidates existing functionality
+   - Simple functions to load macromolecule data from PDB files
+   - Simple functions to load experimental data from MTZ files
+   - Data compatibility validation between macromolecule and experimental data
+   - Bundle information retrieval and cleanup utilities
+   - Convenience functions for simple usage patterns
+
+2. **Key Features:**
+   - `load_macromolecule(pdb_file)` → returns bundle ID
+   - `load_experimental_data(mtz_file)` → returns bundle ID  
+   - `load_both_data(pdb_file, mtz_file)` → returns (macro_id, exp_id)
+   - `validate_data_compatibility(macro_id, exp_id)` → validation results
+   - `get_bundle_info(bundle_id)` → comprehensive bundle information
+   - `cleanup_bundles(bundle_ids)` → delete bundles from Redis
+
+3. **Created Example Script** (`examples/data_loading_example.py`):
+   - Demonstrates all loading methods
+   - Shows data compatibility validation
+   - Illustrates bundle information retrieval
+   - Provides working examples for the next steps
+
+### Current State
+
+- **Clean infrastructure is ready** for reading macromolecule and MTZ data into Redis
+- **No duplication** - reuses existing processors and utilities
+- **Simple API** - just call functions and get bundle IDs back
+- **Validation included** - checks data compatibility automatically
+- **Example available** - ready for testing with real data
+
+### Next Steps
+
+1. **Test the Infrastructure:**
+   ```bash
+   # Download test data
+   python examples/download_pdb_data.py 1ubq
+   
+   # Test the new data loading infrastructure
+   python examples/data_loading_example.py
+   ```
+
+2. **Multi-Shell Testing:**
+   - Use the new data loading functions to create bundles
+   - Start geometry agent in one shell
+   - Run optimization clients in another shell
+   - Verify end-to-end workflow works
+
+3. **Integration Testing:**
+   - Load real (messed-up) protein structure
+   - Validate data compatibility
+   - Run optimization and verify results
+
+### Goals for Next Session
+
+- Achieve successful round-trip using the new clean infrastructure
+- Confirm that data loading → agent → client workflow is robust
+- Document any issues or improvements needed
+
+--- 

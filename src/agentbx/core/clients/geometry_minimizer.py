@@ -15,10 +15,14 @@ import torch.nn as nn
 import torch.optim as optim
 from cctbx.array_family import flex
 
-from .redis_manager import RedisManager
+from ..redis_manager import RedisManager
 from .coordinate_translator import CoordinateTranslator
-from .async_geometry_agent import AsyncGeometryAgent
 from ..processors.macromolecule_processor import MacromoleculeProcessor
+
+# Import for type hints only
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..agents.async_geometry_agent import AsyncGeometryAgent
 
 
 class GeometryMinimizer(nn.Module):
@@ -133,8 +137,8 @@ class GeometryMinimizer(nn.Module):
     async def _request_geometry_calculation(self) -> str:
         """Request geometry calculation from the async agent."""
         try:
-            # Create geometry request
-            from .async_geometry_agent import GeometryRequest
+            # Import GeometryRequest here to avoid circular import
+            from ..agents.async_geometry_agent import GeometryRequest
             
             request = GeometryRequest(
                 macromolecule_bundle_id=self.macromolecule_bundle_id,

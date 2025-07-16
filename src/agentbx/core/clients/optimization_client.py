@@ -9,7 +9,7 @@ import asyncio
 import logging
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 
 import torch
 import torch.nn as nn
@@ -18,8 +18,9 @@ from cctbx.array_family import flex
 
 from ..redis_manager import RedisManager
 from .coordinate_translator import CoordinateTranslator
-from ..agents.async_geometry_agent import AsyncGeometryAgent
-from ..processors.macromolecule_processor import MacromoleculeProcessor
+
+if TYPE_CHECKING:
+    from ..agents.async_geometry_agent import AsyncGeometryAgent, GeometryRequest
 
 
 class OptimizationClient(ABC, nn.Module):
@@ -130,8 +131,8 @@ class OptimizationClient(ABC, nn.Module):
     async def _request_geometry_calculation(self) -> str:
         """Request geometry calculation from the async agent."""
         try:
-            # Create geometry request
-            from .async_geometry_agent import GeometryRequest
+            # Import GeometryRequest here to avoid circular import
+            from ..agents.async_geometry_agent import GeometryRequest
             
             request = GeometryRequest(
                 macromolecule_bundle_id=self.macromolecule_bundle_id,

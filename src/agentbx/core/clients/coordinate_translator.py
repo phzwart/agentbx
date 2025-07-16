@@ -14,8 +14,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-from .redis_manager import RedisManager
-from .bundle_base import Bundle
+from ..redis_manager import RedisManager
+from ..bundle_base import Bundle
 
 
 @dataclass
