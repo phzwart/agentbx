@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Clear separation of **agents** (`src/agentbx/core/agents/`), **clients** (`src/agentbx/core/clients/`), and **processors** (`src/agentbx/processors/`).
+- Abstract optimization client system with subclasses for coordinate, B-factor, and solvent parameter optimization.
+- Example scripts for multi-process agent/client operation and development log (`whatsnext.txt`).
+
+### Changed
+- Refactored codebase for modularity and maintainability.
+- Updated all imports and examples to use the new agent/client/processor structure.
+- Updated documentation and README to reflect new architecture and usage patterns.
+
+### Removed
+- Internal workflow orchestration logic. Users are now encouraged to use external tools (e.g., Prefect, LangGraph) for workflow management.
+
+### Fixed
+- Syntax and import errors from previous refactorings.
+- Improved robustness for multi-process/multi-shell operation.
+
 ## [1.0.4] - 2025-06-25
 
 ### Added

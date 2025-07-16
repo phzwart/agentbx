@@ -379,3 +379,105 @@ class RedisManager:
     ) -> None:
         """Context manager exit."""
         self.close()
+
+    def get_bundle_metadata(self, bundle_id: str) -> dict:
+        """
+        Get metadata for a specific bundle.
+
+        Args:
+            bundle_id: Bundle ID to retrieve metadata for
+
+        Returns:
+            dict: Bundle metadata
+
+        Raises:
+            ConnectionError: If Redis connection is not healthy.
+            KeyError: If bundle metadata is not found in Redis.
+        """
+        if not self.is_healthy():
+            raise ConnectionError("Redis connection is not healthy")
+
+        meta_key = self._generate_key("bundle_meta", bundle_id)
+        client = self._get_client()
+
+        data = client.get(meta_key)
+        if data is None:
+            raise KeyError(f"Bundle metadata {bundle_id} not found in Redis")
+
+        metadata = self._deserialize(data)
+        return metadata
+
+    def list_bundles_with_metadata(self, bundle_type: Optional[str] = None) -> list[dict]:
+        """
+        List all bundles with their metadata, optionally filtered by type.
+
+        Args:
+            bundle_type: Optional bundle type filter
+
+        Returns:
+            list[dict]: List of bundle metadata dictionaries
+
+        Raises:
+            ConnectionError: If Redis connection is not healthy.
+        """
+        if not self.is_healthy():
+            raise ConnectionError("Redis connection is not healthy")
+
+        client = self._get_client()
+        pattern = self._generate_key("bundle", "*")
+        keys = client.keys(pattern)
+
+        bundles_info = []
+        for key in keys:
+            bundle_id = key.decode("utf-8").split(":")[-1]
+
+            try:
+                metadata = self.get_bundle_metadata(bundle_id)
+                
+                if bundle_type and metadata.get("bundle_type") != bundle_type:
+                    continue
+                    
+                bundles_info.append(metadata)
+            except Exception as e:
+                logger.warning(f"Could not retrieve metadata for bundle {bundle_id}: {e}")
+                continue
+
+        return bundles_info
+
+    def inspect_bundle(self, bundle_id: str) -> dict:
+        """
+        Get comprehensive information about a bundle including metadata and content summary.
+
+        Args:
+            bundle_id: Bundle ID to inspect
+
+        Returns:
+            dict: Comprehensive bundle information
+
+        Raises:
+            ConnectionError: If Redis connection is not healthy.
+            KeyError: If bundle is not found in Redis.
+        """
+        if not self.is_healthy():
+            raise ConnectionError("Redis connection is not healthy")
+
+        # Get metadata
+        metadata = self.get_bundle_metadata(bundle_id)
+        
+        # Get bundle content for analysis
+        bundle = self.get_bundle(bundle_id)
+        
+        # Analyze bundle content
+        from ..utils.data_analysis_utils import analyze_bundle
+        
+        analysis = analyze_bundle(bundle)
+        
+        # Combine metadata and analysis
+        inspection = {
+            "bundle_id": bundle_id,
+            "metadata": metadata,
+            "content_analysis": analysis,
+            "inspection_timestamp": datetime.now().isoformat()
+        }
+        
+        return inspection

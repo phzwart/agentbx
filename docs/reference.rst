@@ -86,12 +86,6 @@ Data Analysis Utils
 .. automodule:: agentbx.utils.data_analysis_utils
    :members:
 
-Workflow Utils
-~~~~~~~~~~~~~
-
-.. automodule:: agentbx.utils.workflow_utils
-   :members:
-
 Redis Utils
 ~~~~~~~~~~
 

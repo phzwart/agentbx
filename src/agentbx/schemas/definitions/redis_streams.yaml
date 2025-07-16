@@ -1,0 +1,105 @@
+# src/agentbx/schemas/definitions/redis_streams.yaml
+# Redis stream configuration for agent communication
+
+task_type: redis_streams
+description: "Redis stream configuration for agent communication"
+
+required_assets:
+  - stream_configuration
+  - consumer_groups
+
+optional_assets:
+  - message_schemas
+  - retry_policies
+  - monitoring_config
+
+asset_definitions:
+  stream_configuration:
+    description: "Configuration for Redis streams"
+    data_type: "dict"
+    required_keys:
+      - "stream_name"
+      - "consumer_group"
+      - "max_consumers"
+    optional_keys:
+      - "max_stream_length"
+      - "stream_ttl_seconds"
+      - "compression_enabled"
+
+  consumer_groups:
+    description: "Consumer group configurations"
+    data_type: "list"
+    schema:
+      group_name: "string"
+      consumer_names: "list"
+      max_delivery_count: "integer"
+      ack_timeout_ms: "integer"
+      idle_timeout_ms: "integer"
+
+  message_schemas:
+    description: "JSON schemas for message validation"
+    data_type: "dict"
+    expected_keys:
+      - "instruction_trigger"
+      - "geometry_calculation"
+      - "structure_factor_calculation"
+      - "target_calculation"
+      - "gradient_calculation"
+
+  retry_policies:
+    description: "Retry policies for failed messages"
+    data_type: "dict"
+    expected_keys:
+      - "max_retries"
+      - "backoff_multiplier"
+      - "initial_delay_ms"
+      - "max_delay_ms"
+
+  monitoring_config:
+    description: "Monitoring configuration for streams"
+    data_type: "dict"
+    expected_keys:
+      - "metrics_enabled"
+      - "alert_thresholds"
+      - "log_level"
+      - "health_check_interval"
+
+validation_rules:
+  stream_configuration:
+    - valid_stream_name: true
+    - reasonable_limits: true
+    - unique_stream_names: true
+
+  consumer_groups:
+    - unique_group_names: true
+    - valid_consumer_names: true
+    - reasonable_timeouts: true
+
+  message_schemas:
+    - valid_json_schemas: true
+    - required_fields_present: true
+    - schema_versioning: true
+
+workflow_patterns:
+  stream_creation:
+    - requires: [stream_configuration]
+    - produces: [active_stream]
+    - method: "redis_stream_create"
+
+  consumer_setup:
+    - requires: [consumer_groups]
+    - produces: [active_consumers]
+    - method: "consumer_group_setup"
+
+  message_validation:
+    - requires: [message_schemas]
+    - validates: [incoming_messages]
+    - method: "schema_validation"
+
+dependencies:
+  - redis_connection # Redis connection configuration
+
+produces_for:
+  - agent_communication # For agent messaging
+  - message_routing # For message distribution
+  - monitoring # For stream monitoring

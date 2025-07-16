@@ -73,27 +73,5 @@ def analyze(bundle_id: str, host: str, port: int) -> None:
         click.echo(f"❌ Error: {e}")
 
 
-@cli.command()
-@click.argument("pdb_file")
-@click.argument("mtz_file", required=False)
-@click.option("--host", default="localhost", help="Redis host")
-@click.option("--port", default=6379, help="Redis port")
-def workflow(pdb_file: str, mtz_file: Optional[str], host: str, port: int) -> None:
-    """Execute structure factor calculation workflow."""
-    try:
-        from .workflow_utils import execute_structure_factor_workflow
-
-        redis_manager = RedisManager(host=host, port=port)
-        output_ids = execute_structure_factor_workflow(
-            redis_manager, pdb_file, mtz_file
-        )
-
-        click.echo("✅ Workflow completed successfully")
-        click.echo(f"Output bundle IDs: {output_ids}")
-
-    except Exception as e:
-        click.echo(f"❌ Workflow failed: {e}")
-
-
 if __name__ == "__main__":
     main()

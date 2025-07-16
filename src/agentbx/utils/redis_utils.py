@@ -1,112 +1,84 @@
 """
-Utility functions for Redis operations.
+Redis utility functions for agentbx.
 """
 
+import argparse
+import json
+import logging
+import sys
 from typing import Optional
 
-import click
-
-from ..core.config import RedisConfig
 from ..core.redis_manager import RedisManager
 
-
-@click.group()
-def redis_cli() -> None:
-    """Redis management utilities for agentbx."""
+logger = logging.getLogger(__name__)
 
 
-@redis_cli.command()
-@click.option("--host", default="localhost", help="Redis host")
-@click.option("--port", default=6379, help="Redis port")
-@click.option("--db", default=0, help="Redis database")
-@click.option("--password", help="Redis password")
-def test_connection(host: str, port: int, db: int, password: Optional[str]) -> None:
-    """Test Redis connection."""
+def inspect_bundles_cli():
+    """CLI tool to inspect bundles in Redis."""
+    parser = argparse.ArgumentParser(description="Inspect bundles in Redis")
+    parser.add_argument(
+        "--host", default="localhost", help="Redis host (default: localhost)"
+    )
+    parser.add_argument(
+        "--port", type=int, default=6379, help="Redis port (default: 6379)"
+    )
+    parser.add_argument(
+        "--type", help="Filter by bundle type"
+    )
+    parser.add_argument(
+        "--bundle-id", help="Inspect specific bundle by ID"
+    )
+    parser.add_argument(
+        "--metadata-only", action="store_true", 
+        help="Show only metadata, not full content analysis"
+    )
+    parser.add_argument(
+        "--json", action="store_true", 
+        help="Output in JSON format"
+    )
+    
+    args = parser.parse_args()
+    
+    # Initialize Redis manager
+    redis_manager = RedisManager(host=args.host, port=args.port)
+    
+    if not redis_manager.is_healthy():
+        print("Error: Redis connection is not healthy", file=sys.stderr)
+        sys.exit(1)
+    
     try:
-        config = RedisConfig(host=host, port=port, db=db, password=password)
-        redis_manager = RedisManager(**config.__dict__)
-
-        if redis_manager.is_healthy():
-            click.echo("✅ Redis connection successful!")
+        if args.bundle_id:
+            # Inspect specific bundle
+            if args.metadata_only:
+                result = redis_manager.get_bundle_metadata(args.bundle_id)
+            else:
+                result = redis_manager.inspect_bundle(args.bundle_id)
         else:
-            click.echo("❌ Redis connection failed!")
-
-    except Exception as e:
-        click.echo(f"❌ Redis connection error: {e}")
-
-
-@redis_cli.command()
-@click.option("--host", default="localhost", help="Redis host")
-@click.option("--port", default=6379, help="Redis port")
-@click.option("--db", default=0, help="Redis database")
-@click.option("--password", help="Redis password")
-def list_bundles(host: str, port: int, db: int, password: Optional[str]) -> None:
-    """List all bundles in Redis."""
-    try:
-        config = RedisConfig(host=host, port=port, db=db, password=password)
-        redis_manager = RedisManager(**config.__dict__)
-
-        bundles = redis_manager.list_bundles()
-        if bundles:
-            click.echo(f"Found {len(bundles)} bundles:")
-            for bundle_id in bundles:
-                click.echo(f"  - {bundle_id}")
+            # List bundles
+            result = redis_manager.list_bundles_with_metadata(args.type)
+        
+        if args.json:
+            print(json.dumps(result, indent=2, default=str))
         else:
-            click.echo("No bundles found.")
-
+            if isinstance(result, list):
+                if not result:
+                    print("No bundles found")
+                else:
+                    for bundle_info in result:
+                        print(f"Bundle ID: {bundle_info['bundle_id']}")
+                        print(f"  Type: {bundle_info['bundle_type']}")
+                        print(f"  Created: {bundle_info['created_at']}")
+                        print(f"  Size: {bundle_info['size_bytes']} bytes")
+                        print(f"  Checksum: {bundle_info['checksum']}")
+                        print("---")
+            else:
+                print("Bundle Information:")
+                print(json.dumps(result, indent=2, default=str))
+                
     except Exception as e:
-        click.echo(f"❌ Error listing bundles: {e}")
-
-
-@redis_cli.command()
-@click.argument("bundle_id")
-@click.option("--host", default="localhost", help="Redis host")
-@click.option("--port", default=6379, help="Redis port")
-@click.option("--db", default=0, help="Redis database")
-@click.option("--password", help="Redis password")
-def show_bundle(
-    bundle_id: str, host: str, port: int, db: int, password: Optional[str]
-) -> None:
-    """Show bundle details."""
-    try:
-        config = RedisConfig(host=host, port=port, db=db, password=password)
-        redis_manager = RedisManager(**config.__dict__)
-
-        bundle = redis_manager.get_bundle(bundle_id)
-        click.echo(f"Bundle ID: {bundle_id}")
-        click.echo(f"Type: {bundle.bundle_type}")
-        click.echo(f"Created: {bundle.created_at}")
-        click.echo(f"Assets: {list(bundle.assets.keys())}")
-        click.echo(f"Size estimate: {bundle.get_size_estimate()} bytes")
-
-    except Exception as e:
-        click.echo(f"❌ Error showing bundle: {e}")
-
-
-@redis_cli.command()
-@click.option("--host", default="localhost", help="Redis host")
-@click.option("--port", default=6379, help="Redis port")
-@click.option("--db", default=0, help="Redis database")
-@click.option("--password", help="Redis password")
-@click.confirmation_option(prompt="Are you sure you want to clear all agentbx data?")
-def clear_all(host: str, port: int, db: int, password: Optional[str]) -> None:
-    """Clear all agentbx data from Redis."""
-    try:
-        config = RedisConfig(host=host, port=port, db=db, password=password)
-        redis_manager = RedisManager(**config.__dict__)
-
-        bundles = redis_manager.list_bundles()
-        deleted_count = 0
-
-        for bundle_id in bundles:
-            if redis_manager.delete_bundle(bundle_id):
-                deleted_count += 1
-
-        click.echo(f"✅ Deleted {deleted_count} bundles.")
-
-    except Exception as e:
-        click.echo(f"❌ Error clearing data: {e}")
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
-    redis_cli()
+    inspect_bundles_cli()

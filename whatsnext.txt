@@ -1,0 +1,45 @@
+# agentbx Development Log: What's Next
+
+## Summary of Recent Work
+
+- **Refactored the codebase** to clearly separate agent logic (`src/agentbx/core/agents/`) and client/optimizer logic (`src/agentbx/core/clients/`).
+- Implemented an **abstract optimization client** system, with subclasses for coordinate, B-factor, and solvent parameter optimization.
+- Ensured all optimizers use a single source of truth for parameter updates, and follow PyTorch conventions (separating backward/step logic).
+- Updated all imports and examples to use the new structure.
+- Fixed syntax and import errors, ensuring the codebase is ready for modular, scalable development.
+
+## Current State
+
+- The codebase is organized and modular, with clear boundaries between agents (services that listen to Redis streams and process requests) and clients (optimizers that submit requests and update bundles).
+- Example scripts are in place to demonstrate usage of the optimizers and agents.
+- The system is ready for real-world, multi-process/multi-shell testing.
+
+## Next Steps
+
+1. **Prepare a Test Case:**
+   - Select a real protein structure (PDB file) and intentionally mess up the coordinates (e.g., add random noise or distortions).
+   - Store this as a new macromolecule bundle in Redis using the provided example scripts.
+
+2. **Multi-Shell/Process Testing:**
+   - Open at least two separate shells:
+     - **Shell 1:** Start the async geometry agent (from `src/agentbx/core/agents/async_geometry_agent.py` or via the example script).
+     - **Shell 2:** Run a client optimizer (e.g., coordinate, B-factor, or solvent optimizer) to submit optimization requests and monitor progress.
+   - Ensure the agent and client communicate via Redis streams as intended.
+
+3. **Monitor and Debug:**
+   - Observe logs in both shells for errors, warnings, and progress.
+   - Check that bundles are updated in Redis and that optimization proceeds as expected.
+   - Validate that the optimizer can correct the messed-up coordinates and improve the structure.
+
+4. **Iterate and Document:**
+   - Note any issues, bottlenecks, or unexpected behaviors.
+   - Append findings, fixes, and ideas to this `whatsnext.txt` file as a running development blog.
+
+## Goals for the Next Session
+
+- Achieve a successful round-trip: agent and client running in separate shells, optimizing a real (messed-up) protein structure.
+- Confirm that the modular agent/client architecture is robust in a real-world, multi-process environment.
+- Document results, issues, and next ideas in this file for future reference.
+
+---
+*Append below this line for future development notes and next steps.* 
