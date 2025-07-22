@@ -107,51 +107,25 @@ class RedisManager:
 
     def _serialize(self, obj: Any) -> bytes:
         """
-        Serialize object to bytes.
+        Serialize object to bytes using pickle.
 
-        Uses JSON for simple types, base64-encoded pickle for complex objects.
+        Uses pickle for all objects to ensure compatibility with CCTBX objects.
         Note: Pickle is used only for internal trusted data, not user input.
         """
-        try:
-            # Try JSON first for simple types
-            return json.dumps(obj).encode("utf-8")
-        except (TypeError, ValueError):
-            # Fall back to pickle for complex objects (internal trusted data only)
-            # nosec - pickle is used only for internal trusted data
-            return pickle.dumps(obj)
+        # Use pickle directly for all objects to ensure CCTBX compatibility
+        # nosec - pickle is used only for internal trusted data
+        return pickle.dumps(obj)
 
     def _deserialize(self, data: bytes) -> Any:
         """
-        Deserialize bytes to object.
+        Deserialize bytes to object using pickle.
 
-        Tries JSON first, falls back to pickle for complex objects.
+        Uses pickle for all objects to ensure compatibility with CCTBX objects.
         Note: Pickle is used only for internal trusted data, not user input.
         """
-        if data.startswith(b"{"):
-            # JSON-encoded data
-            try:
-                return json.loads(data.decode("utf-8"))
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                # Try to find the first non-JSON byte and unpickle from there
-                for i, b in enumerate(data):
-                    if b == 0x80:  # likely start of pickle protocol
-                        try:
-                            # nosec - pickle is used only for internal trusted data
-                            return pickle.loads(data[i:])
-                        except Exception:
-                            break
-                # Fallback: try to unpickle the whole thing
-                # nosec - pickle is used only for internal trusted data
-                return pickle.loads(data)
-        else:
-            # Try JSON first for numbers, booleans, etc.
-            try:
-                decoded = data.decode("utf-8")
-                return json.loads(decoded)
-            except (json.JSONDecodeError, UnicodeDecodeError):
-                # Fall back to pickle for complex objects (internal trusted data only)
-                # nosec - pickle is used only for internal trusted data
-                return pickle.loads(data)
+        # Use pickle directly for all objects to ensure CCTBX compatibility
+        # nosec - pickle is used only for internal trusted data
+        return pickle.loads(data)
 
     def _generate_key(self, prefix: str, identifier: str) -> str:
         """Generate Redis key with prefix."""
@@ -173,6 +147,14 @@ class RedisManager:
         """
         if not self.is_healthy():
             raise ConnectionError("Redis connection is not healthy")
+
+        # Before storing the bundle
+        if hasattr(bundle, "assets"):
+            for key, value in bundle.assets.items():
+                if "flex" in str(type(value)) or "mmtbx" in str(type(value)):
+                    if not bundle.get_metadata("dialect"):
+                        bundle.add_metadata("dialect", "cctbx")
+                    break
 
         # Generate bundle ID if not provided
         if bundle_id is None:
@@ -407,7 +389,9 @@ class RedisManager:
         metadata = self._deserialize(data)
         return metadata
 
-    def list_bundles_with_metadata(self, bundle_type: Optional[str] = None) -> list[dict]:
+    def list_bundles_with_metadata(
+        self, bundle_type: Optional[str] = None
+    ) -> list[dict]:
         """
         List all bundles with their metadata, optionally filtered by type.
 
@@ -433,13 +417,15 @@ class RedisManager:
 
             try:
                 metadata = self.get_bundle_metadata(bundle_id)
-                
+
                 if bundle_type and metadata.get("bundle_type") != bundle_type:
                     continue
-                    
+
                 bundles_info.append(metadata)
             except Exception as e:
-                logger.warning(f"Could not retrieve metadata for bundle {bundle_id}: {e}")
+                logger.warning(
+                    f"Could not retrieve metadata for bundle {bundle_id}: {e}"
+                )
                 continue
 
         return bundles_info
@@ -463,21 +449,21 @@ class RedisManager:
 
         # Get metadata
         metadata = self.get_bundle_metadata(bundle_id)
-        
+
         # Get bundle content for analysis
         bundle = self.get_bundle(bundle_id)
-        
+
         # Analyze bundle content
-        from ..utils.data_analysis_utils import analyze_bundle
-        
+        from agentbx.utils.data_analysis_utils import analyze_bundle
+
         analysis = analyze_bundle(bundle)
-        
+
         # Combine metadata and analysis
         inspection = {
             "bundle_id": bundle_id,
             "metadata": metadata,
             "content_analysis": analysis,
-            "inspection_timestamp": datetime.now().isoformat()
+            "inspection_timestamp": datetime.now().isoformat(),
         }
-        
+
         return inspection

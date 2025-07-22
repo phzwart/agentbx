@@ -7,10 +7,11 @@ from typing import Optional
 
 import click
 
-from ..core.redis_manager import RedisManager
-from .crystallographic_utils import validate_crystallographic_files
+from agentbx.core.redis_manager import RedisManager
+
 from .data_analysis_utils import analyze_bundle
 from .data_analysis_utils import print_analysis_summary
+from .io.crystallographic_utils import validate_crystallographic_files
 
 
 logging.basicConfig(level=logging.INFO)

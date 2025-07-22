@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 try:
     from agentbx.agents.geometry_processor import CctbxGeometryProcessor
     from agentbx.core.bundle_base import Bundle
-    from agentbx.utils.crystallographic_utils import CrystallographicFileHandler
+    from agentbx.utils.io.crystallographic_utils import CrystallographicFileHandler
 except ImportError:
     print(
         "Error: Could not import agentbx modules. Make sure you're in the correct directory."

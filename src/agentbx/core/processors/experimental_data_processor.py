@@ -15,7 +15,8 @@ from typing import Any
 from typing import Dict
 from typing import List
 
-from ..bundle_base import Bundle
+from agentbx.core.bundle_base import Bundle
+
 from .base import SinglePurposeProcessor
 
 
@@ -125,7 +126,7 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
                 if r_free_flags is not None:
                     r_free_flags = r_free_flags.as_bool()
             except Exception:
-                print(f"Warning: Could not read R_free flags from {r_free_label}")
+                self.logger.warning(f"Could not read R_free flags from {r_free_label}")
 
         # Extract experimental metadata
         metadata = self._extract_metadata_from_file(reflection_file, file_path)
@@ -199,14 +200,14 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         if sigmas is not None:
             sigma_f_ratios = sigmas.data() / f_obs.data()
             if (sigma_f_ratios > 10).count(True) > f_obs.size() * 0.1:
-                print("Warning: Many reflections have high sigma/F ratios")
+                self.logger.warning("Many reflections have high sigma/F ratios")
 
         # Check R_free completeness if available
         if r_free_flags is not None:
             r_free_fraction = r_free_flags.data().count(True) / r_free_flags.size()
             if r_free_fraction < 0.01 or r_free_fraction > 0.2:
-                print(
-                    f"Warning: R_free fraction ({r_free_fraction:.3f}) outside normal range"
+                self.logger.warning(
+                    f"R_free fraction ({r_free_fraction:.3f}) outside normal range"
                 )
 
     def _determine_target_preferences(

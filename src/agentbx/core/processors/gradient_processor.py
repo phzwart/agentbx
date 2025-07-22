@@ -11,7 +11,8 @@ Applies chain rule: dT/dx = dT/dF * dF/dx
 from typing import Dict
 from typing import List
 
-from ..bundle_base import Bundle
+from agentbx.core.bundle_base import Bundle
+
 from .base import SinglePurposeProcessor
 
 
@@ -56,31 +57,33 @@ class GradientProcessor(SinglePurposeProcessor):
         # Create gradient bundle
         gradient_bundle = Bundle(bundle_type="gradient_data")
         gradient_bundle.add_asset("parameter_gradients", parameter_gradients)
-        gradient_bundle.add_asset("gradient_norm", self._calculate_gradient_norm(parameter_gradients))
+        gradient_bundle.add_asset(
+            "gradient_norm", self._calculate_gradient_norm(parameter_gradients)
+        )
 
         # Add metadata about the gradient calculation
         gradient_bundle.add_metadata("gradient_type", "chain_rule")
-        gradient_bundle.add_metadata("target_type", target_data.get_asset("target_type"))
+        gradient_bundle.add_metadata(
+            "target_type", target_data.get_asset("target_type")
+        )
 
         return {"gradient_data": gradient_bundle}
 
-    def _apply_chain_rule(
-        self, target_gradients_wrt_sf, sf_gradients_wrt_params
-    ):
+    def _apply_chain_rule(self, target_gradients_wrt_sf, sf_gradients_wrt_params):
         """
         Apply chain rule to compute parameter gradients.
-        
+
         Args:
             target_gradients_wrt_sf: Gradients of target w.r.t. structure factors
             sf_gradients_wrt_params: Gradients of structure factors w.r.t. parameters
-            
+
         Returns:
             Parameter gradients
         """
         # This is a placeholder implementation
         # In practice, this would involve tensor operations
         # dT/dx = dT/dF * dF/dx
-        
+
         # For now, return a simple structure
         # In real implementation, this would be the actual chain rule calculation
         return {
@@ -103,7 +106,11 @@ class GradientProcessor(SinglePurposeProcessor):
         """
         return {
             "processor_type": "gradient_processor",
-            "input_types": ["structure_factor_data", "target_data", "xray_atomic_model_data"],
+            "input_types": [
+                "structure_factor_data",
+                "target_data",
+                "xray_atomic_model_data",
+            ],
             "output_types": ["gradient_data"],
             "memory_usage": "high",
             "cpu_usage": "high",

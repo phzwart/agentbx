@@ -1,3 +1,4 @@
+# DEPRECATED: This file is being partitioned into io, structures, reciprocal_space, and maps submodules. Please add new code to those locations.
 """
 Utilities for handling crystallographic data files and creating bundles.
 """
@@ -188,7 +189,7 @@ def create_atomic_model_bundle(
     Returns:
         Bundle with atomic model data
     """
-    from ..core.bundle_base import Bundle
+    from agentbx.core.bundle_base import Bundle
 
     handler = CrystallographicFileHandler()
 

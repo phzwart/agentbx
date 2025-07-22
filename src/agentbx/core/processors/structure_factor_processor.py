@@ -17,7 +17,8 @@ from typing import Any
 from typing import Dict
 from typing import List
 
-from ..bundle_base import Bundle
+from agentbx.core.bundle_base import Bundle
+
 from .base import SinglePurposeProcessor
 
 

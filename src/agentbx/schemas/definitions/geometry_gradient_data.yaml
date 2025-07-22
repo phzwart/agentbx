@@ -118,3 +118,8 @@ produces_for:
   - optimization_data # Gradients for coordinate optimization
   - convergence_data # Gradient norms for convergence monitoring
   - validation_data # Geometry quality assessment
+
+dialect:
+  type: string
+  enum: [numpy, cctbx]
+  description: Specifies the array type used for gradients (e.g., numpy, cctbx, torch).
