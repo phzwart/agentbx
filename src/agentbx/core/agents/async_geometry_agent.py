@@ -14,7 +14,10 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 from typing import Dict
+from typing import Mapping
 from typing import Optional
+from typing import Union
+from typing import cast
 
 import numpy as np
 import redis.asyncio as redis
@@ -45,7 +48,7 @@ class GeometryRequest:
     retry_count: int = 0
     max_retries: int = 3
     refresh_restraints: bool = False  # New flag to control restraint rebuilding
-    created_at: datetime = None
+    created_at: Optional[datetime] = None
 
     def __post_init__(self):
         """Post-initialization hook."""
@@ -94,7 +97,7 @@ class AsyncGeometryAgent:
         redis_manager: RedisManager,
         stream_name: str = "geometry_requests",
         consumer_group: str = "geometry_agents",
-        consumer_name: str = None,
+        consumer_name: Optional[str] = None,
         max_processing_time: int = 300,
         health_check_interval: int = 30,
     ):
@@ -122,13 +125,13 @@ class AsyncGeometryAgent:
         self.geometry_processor = CctbxGeometryProcessor(
             redis_manager, f"{agent_id}_processor"
         )
-        self.redis_client = None
+        self.redis_client: Optional[redis.Redis] = None
         self.is_running = False
-        self.stats = {
+        self.stats: Dict[str, Union[int, float, str]] = {
             "requests_processed": 0,
             "requests_failed": 0,
             "total_processing_time": 0.0,
-            "last_request_time": None,
+            "last_request_time": "",
         }
 
         # Security and configuration
@@ -214,6 +217,8 @@ class AsyncGeometryAgent:
         """Setup Redis consumer group for the stream."""
         try:
             # Create consumer group if it doesn't exist
+            if self.redis_client is None:
+                raise RuntimeError("redis_client is not initialized")
             try:
                 await self.redis_client.xgroup_create(
                     self.stream_name, self.consumer_group, id="0", mkstream=True
@@ -292,8 +297,25 @@ class AsyncGeometryAgent:
                 "consumer_name": self.consumer_name,
             }
 
+            if self.redis_client is None:
+                raise RuntimeError("redis_client is not initialized")
+
+            # Before calling hset, cast all values in status to str, int, or float as appropriate:
+            def _cast_status_value(val):
+                if isinstance(val, (str, int, float, bytes)):
+                    return val
+                try:
+                    return float(val)
+                except Exception:
+                    return str(val)
+
+            status_cast = {k: _cast_status_value(v) for k, v in status.items()}
             await self.redis_client.hset(
-                f"agentbx:agents:{self.agent_id}", mapping=status
+                f"agentbx:agents:{self.agent_id}",
+                mapping=cast(
+                    Mapping[Union[str, bytes], Union[bytes, float, int, str]],
+                    status_cast,
+                ),
             )
 
         except Exception as e:
@@ -303,6 +325,8 @@ class AsyncGeometryAgent:
         while self.is_running:
             try:
                 # Poll for messages from the geometry_requests stream
+                if self.redis_client is None:
+                    raise RuntimeError("redis_client is not initialized")
                 messages = await self.redis_client.xreadgroup(
                     groupname=self.consumer_group,
                     consumername=self.consumer_name,
@@ -316,6 +340,10 @@ class AsyncGeometryAgent:
                             try:
                                 await self._process_message(message_id, fields)
                                 # Acknowledge the message
+                                if self.redis_client is None:
+                                    raise RuntimeError(
+                                        "redis_client is not initialized"
+                                    )
                                 await self.redis_client.xack(
                                     self.stream_name, self.consumer_group, message_id
                                 )
@@ -329,6 +357,10 @@ class AsyncGeometryAgent:
                                     f"Message processing error traceback: {traceback.format_exc()}"
                                 )
                                 # Still acknowledge to avoid infinite retry
+                                if self.redis_client is None:
+                                    raise RuntimeError(
+                                        "redis_client is not initialized"
+                                    )
                                 await self.redis_client.xack(
                                     self.stream_name, self.consumer_group, message_id
                                 )
@@ -452,6 +484,8 @@ class AsyncGeometryAgent:
         try:
             # Send response to response stream
             response_stream = f"{self.stream_name}_responses"
+            if self.redis_client is None:
+                raise RuntimeError("redis_client is not initialized")
             await self.redis_client.xadd(
                 response_stream,
                 {
@@ -542,8 +576,13 @@ class AsyncGeometryAgent:
             )
 
             # Update stats
-            self.stats["requests_processed"] += 1
-            self.stats["total_processing_time"] += response.processing_time
+            self.stats["requests_processed"] = (
+                int(self.stats.get("requests_processed", 0)) + 1
+            )
+            self.stats["total_processing_time"] = (
+                float(self.stats.get("total_processing_time", 0.0))
+                + response.processing_time
+            )
             self.stats["last_request_time"] = datetime.now().isoformat()
 
             await self._send_response(response)
@@ -564,7 +603,9 @@ class AsyncGeometryAgent:
                 processing_time=time.time() - start_time,
             )
 
-            self.stats["requests_failed"] += 1
+            self.stats["requests_failed"] = (
+                int(self.stats.get("requests_failed", 0)) + 1
+            )
             await self._send_response(response)
 
     def get_stats(self) -> Dict[str, Any]:

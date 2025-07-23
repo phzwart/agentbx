@@ -11,6 +11,7 @@ Does NOT know about:
 - Target functions
 """
 
+import logging
 from typing import Any
 from typing import Dict
 from typing import List
@@ -27,6 +28,10 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
 
     Responsibility: Convert raw experimental files to clean experimental_data bundles.
     """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.logger = logging.getLogger(__name__)
 
     def define_input_bundle_types(self) -> List[str]:
         """Define the input bundle types for this processor."""

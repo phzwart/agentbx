@@ -32,19 +32,19 @@ class TargetDataBundle(BaseModel):
     target_type: str = Field(description="Type of target function used")
 
     # Optional assets
-    r_factors: Dict[str, Any] = Field(
+    r_factors: Optional[Dict[str, Any]] = Field(
         default=None, description="Crystallographic R-factors"
     )
-    target_per_reflection: Any = Field(
+    target_per_reflection: Optional[Any] = Field(
         default=None, description="Target contribution from each reflection"
     )
-    likelihood_parameters: Dict[str, Any] = Field(
+    likelihood_parameters: Optional[Dict[str, Any]] = Field(
         default=None, description="Maximum likelihood alpha and beta parameters"
     )
-    target_gradients_wrt_sf: Any = Field(
+    target_gradients_wrt_sf: Optional[Any] = Field(
         default=None, description="Gradients of target w.r.t structure factors"
     )
-    target_metadata: Dict[str, Any] = Field(
+    target_metadata: Optional[Dict[str, Any]] = Field(
         default=None, description="Target computation metadata"
     )
 
@@ -115,17 +115,17 @@ class GradientDataBundle(BaseModel):
     )
 
     # Optional assets
-    bfactor_gradients: Any = Field(
+    bfactor_gradients: Optional[Any] = Field(
         default=None, description="Gradients w.r.t. B-factors: dT/d(B)"
     )
-    occupancy_gradients: Any = Field(
+    occupancy_gradients: Optional[Any] = Field(
         default=None, description="Gradients w.r.t. occupancies: dT/d(occ)"
     )
-    structure_factor_gradients: Any = Field(
+    structure_factor_gradients: Optional[Any] = Field(
         default=None,
         description="Intermediate: gradients w.r.t. structure factors dT/dF",
     )
-    gradient_metadata: Dict[str, Any] = Field(
+    gradient_metadata: Optional[Dict[str, Any]] = Field(
         default=None, description="Gradient computation information"
     )
 
@@ -189,13 +189,13 @@ class GeometryGradientDataBundle(BaseModel):
     )
 
     # Optional assets
-    restraint_energies: Dict[str, Any] = Field(
+    restraint_energies: Optional[Dict[str, Any]] = Field(
         default=None, description="Individual restraint energies by type"
     )
-    restraint_counts: Dict[str, Any] = Field(
+    restraint_counts: Optional[Dict[str, Any]] = Field(
         default=None, description="Number of restraints by type"
     )
-    geometry_metadata: Dict[str, Any] = Field(
+    geometry_metadata: Optional[Dict[str, Any]] = Field(
         default=None, description="Metadata about geometry restraint computation"
     )
 
@@ -259,13 +259,13 @@ class AgentConfigurationBundle(BaseModel):
     capabilities: Any = Field(description="Agent capabilities and their configurations")
 
     # Optional assets
-    security_policies: Dict[str, Any] = Field(
+    security_policies: Optional[Dict[str, Any]] = Field(
         default=None, description="Security policies for the agent"
     )
-    resource_limits: Dict[str, Any] = Field(
+    resource_limits: Optional[Dict[str, Any]] = Field(
         default=None, description="Resource limits for the agent"
     )
-    monitoring_config: Dict[str, Any] = Field(
+    monitoring_config: Optional[Dict[str, Any]] = Field(
         default=None, description="Monitoring configuration for the agent"
     )
 
@@ -327,16 +327,16 @@ class MacromoleculeDataBundle(BaseModel):
     )
 
     # Optional assets
-    model_manager: Any = Field(
+    model_manager: Optional[Any] = Field(
         default=None, description="MMTBX model manager with geometry restraints"
     )
-    restraint_manager: Any = Field(
+    restraint_manager: Optional[Any] = Field(
         default=None, description="Geometry restraints manager"
     )
-    xray_structure: Any = Field(
+    xray_structure: Optional[Any] = Field(
         default=None, description="X-ray structure derived from PDB hierarchy"
     )
-    macromolecule_metadata: Dict[str, Any] = Field(
+    macromolecule_metadata: Optional[Dict[str, Any]] = Field(
         default=None, description="Macromolecule provenance and quality info"
     )
 
@@ -408,13 +408,13 @@ class XrayAtomicModelDataBundle(BaseModel):
     )
 
     # Optional assets
-    bulk_solvent_params: Dict[str, Any] = Field(
+    bulk_solvent_params: Optional[Dict[str, Any]] = Field(
         default=None, description="Bulk solvent correction parameters"
     )
-    anisotropic_scaling_params: Dict[str, Any] = Field(
+    anisotropic_scaling_params: Optional[Dict[str, Any]] = Field(
         default=None, description="Anisotropic scaling parameters"
     )
-    model_metadata: Dict[str, Any] = Field(
+    model_metadata: Optional[Dict[str, Any]] = Field(
         default=None, description="Model provenance and quality info"
     )
 
@@ -478,20 +478,22 @@ class ExperimentalDataBundle(BaseModel):
     )
 
     # Optional assets
-    r_free_flags: Any = Field(
+    r_free_flags: Optional[Any] = Field(
         default=None, description="Free R flags for cross-validation"
     )
-    sigmas: Any = Field(
+    sigmas: Optional[Any] = Field(
         default=None, description="Uncertainties in observed structure factors"
     )
-    i_obs: Any = Field(default=None, description="Observed intensities (if available)")
-    anomalous_data: Dict[str, Any] = Field(
+    i_obs: Optional[Any] = Field(
+        default=None, description="Observed intensities (if available)"
+    )
+    anomalous_data: Optional[Dict[str, Any]] = Field(
         default=None, description="Anomalous scattering data (F+, F-, or I+, I-)"
     )
-    experimental_metadata: Dict[str, Any] = Field(
+    experimental_metadata: Optional[Dict[str, Any]] = Field(
         default=None, description="Experimental conditions and data collection info"
     )
-    target_preferences: Dict[str, Any] = Field(
+    target_preferences: Optional[Dict[str, Any]] = Field(
         default=None, description="Preferred target function for this dataset"
     )
 
@@ -567,16 +569,16 @@ class AgentSecurityBundle(BaseModel):
     permissions: Any = Field(description="List of granted permissions for the agent")
 
     # Optional assets
-    capabilities: Any = Field(
+    capabilities: Optional[Any] = Field(
         default=None, description="Agent capabilities and their schemas"
     )
-    whitelisted_modules: Any = Field(
+    whitelisted_modules: Optional[Any] = Field(
         default=None, description="Modules the agent is allowed to import and use"
     )
-    instruction_triggers: Any = Field(
+    instruction_triggers: Optional[Any] = Field(
         default=None, description="Valid instruction triggers for this agent"
     )
-    security_policies: Dict[str, Any] = Field(
+    security_policies: Optional[Dict[str, Any]] = Field(
         default=None, description="Security policies for the agent"
     )
 
@@ -642,13 +644,13 @@ class RedisStreamsBundle(BaseModel):
     consumer_groups: Any = Field(description="Consumer group configurations")
 
     # Optional assets
-    message_schemas: Dict[str, Any] = Field(
+    message_schemas: Optional[Dict[str, Any]] = Field(
         default=None, description="JSON schemas for message validation"
     )
-    retry_policies: Dict[str, Any] = Field(
+    retry_policies: Optional[Dict[str, Any]] = Field(
         default=None, description="Retry policies for failed messages"
     )
-    monitoring_config: Dict[str, Any] = Field(
+    monitoring_config: Optional[Dict[str, Any]] = Field(
         default=None, description="Monitoring configuration for streams"
     )
 
@@ -708,18 +710,18 @@ class StructureFactorDataBundle(BaseModel):
     )
 
     # Optional assets
-    f_mask: Any = Field(
+    f_mask: Optional[Any] = Field(
         default=None, description="Structure factors from bulk solvent mask"
     )
-    f_model: Any = Field(
+    f_model: Optional[Any] = Field(
         default=None,
         description="Combined structure factors: scale * (f_calc + k_sol * f_mask)",
     )
-    scale_factors: Dict[str, Any] = Field(
+    scale_factors: Optional[Dict[str, Any]] = Field(
         default=None,
         description="Scaling parameters used in structure factor calculation",
     )
-    computation_info: Dict[str, Any] = Field(
+    computation_info: Optional[Dict[str, Any]] = Field(
         default=None, description="Metadata about structure factor calculation"
     )
 
@@ -807,8 +809,8 @@ class CoordinateUpdateBundle(BaseModel):
     parent_bundle_id: str = Field(description="ID of the parent macromolecule bundle")
 
     # Optional assets
-    step: int = Field(default=None, description="Optimization step number")
-    timestamp: float = Field(
+    step: Optional[int] = Field(default=None, description="Optimization step number")
+    timestamp: Optional[float] = Field(
         default=None, description="Timestamp of update (seconds since epoch)"
     )
 

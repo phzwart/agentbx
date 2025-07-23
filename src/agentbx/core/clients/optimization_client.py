@@ -6,10 +6,13 @@ Redis integration and async geometry calculations.
 """
 
 import asyncio
+import json
 import logging
 import time
+import uuid
 from abc import ABC
 from abc import abstractmethod
+from dataclasses import asdict
 
 # Import for type hints only
 from typing import TYPE_CHECKING
@@ -150,16 +153,17 @@ class OptimizationClient(ABC, nn.Module):
 
             request = GeometryRequest(
                 macromolecule_bundle_id=self.macromolecule_bundle_id,
-                calculation_type="geometry_gradients",
-                priority="normal",
+                priority=1,
+                request_id=str(uuid.uuid4()),
             )
 
             # Send request to Redis stream
             stream_name = "geometry_requests"
-            await self.redis_manager.redis_client.xadd(
+            redis_client = self.redis_manager._get_client()
+            await redis_client.xadd(
                 stream_name,
                 {
-                    "request": request.model_dump_json(),
+                    "request": json.dumps(asdict(request)),
                     "timestamp": time.time(),
                     "source": f"{self.__class__.__name__}",
                 },
@@ -185,7 +189,7 @@ class OptimizationClient(ABC, nn.Module):
 
             # Create consumer group if it doesn't exist
             try:
-                await self.redis_manager.redis_client.xgroup_create(
+                await self.redis_manager._get_client().xgroup_create(
                     response_stream, consumer_group, mkstream=True
                 )
             except Exception:
@@ -197,7 +201,7 @@ class OptimizationClient(ABC, nn.Module):
             while time.time() - start_time < self.timeout_seconds:
                 try:
                     # Read messages from the stream
-                    messages = await self.redis_manager.redis_client.xreadgroup(
+                    messages = await self.redis_manager._get_client().xreadgroup(
                         consumer_group,
                         consumer_name,
                         {response_stream: ">"},
@@ -212,14 +216,12 @@ class OptimizationClient(ABC, nn.Module):
                                 response_data = fields.get(b"response", b"{}").decode()
 
                                 # Extract bundle ID from response
-                                import json
-
                                 response_dict = json.loads(response_data)
                                 bundle_id = response_dict.get("geometry_bundle_id")
 
                                 if bundle_id:
                                     # Acknowledge message
-                                    await self.redis_manager.redis_client.xack(
+                                    await self.redis_manager._get_client().xack(
                                         response_stream, consumer_group, message_id
                                     )
 

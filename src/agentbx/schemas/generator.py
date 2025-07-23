@@ -459,12 +459,37 @@ class SchemaGenerator:
                 if asset_name in schema.asset_definitions:
                     asset_def = schema.asset_definitions[asset_name]
                     field_line = self.generate_asset_model(asset_name, asset_def)
-                    # Make it optional
-                    field_line = field_line.replace(
-                        " = Field(", " = Field(default=None, "
-                    )
-                    if " = ..." in field_line:
-                        field_line = field_line.replace(" = ...", " = None")
+                    # Make it optional - wrap type with Optional[...] and add default=None
+                    if ": " in field_line and " = " in field_line:
+                        # Parse the field line: "    field_name: Type = Field(...)"
+                        parts = field_line.split(": ", 1)
+                        if len(parts) == 2:
+                            field_name_part = parts[0]  # "    field_name"
+                            type_and_field_part = parts[
+                                1
+                            ]  # "Type = Field(...)" or "Type = ..."
+
+                            if " = " in type_and_field_part:
+                                type_part, field_part = type_and_field_part.split(
+                                    " = ", 1
+                                )
+
+                                # Wrap type with Optional if not already wrapped
+                                if not type_part.startswith("Optional["):
+                                    type_part = f"Optional[{type_part}]"
+
+                                # Add default=None to Field or replace ... with None
+                                if field_part == "...":
+                                    field_part = "None"
+                                elif field_part.startswith("Field("):
+                                    field_part = field_part.replace(
+                                        "Field(", "Field(default=None, "
+                                    )
+
+                                field_line = (
+                                    f"{field_name_part}: {type_part} = {field_part}"
+                                )
+
                     lines.append(field_line)
 
         lines.append("")

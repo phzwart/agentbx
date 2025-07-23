@@ -15,6 +15,7 @@ import logging
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 
 from agentbx.core.bundle_base import Bundle
 from agentbx.schemas.generated import GeometryGradientDataBundle
@@ -197,7 +198,7 @@ class CctbxGeometryProcessor(SinglePurposeProcessor):
             return 0.0
 
     def _create_gradient_bundle(
-        self, geometry_gradients: Any, parent_bundle_id: str
+        self, geometry_gradients: Any, parent_bundle_id: Optional[str]
     ) -> Bundle:
         """Create a gradient bundle from geometry gradients."""
         # Create geometry gradient bundle

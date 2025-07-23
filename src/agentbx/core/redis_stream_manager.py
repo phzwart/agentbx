@@ -488,12 +488,7 @@ class RedisStreamManager:
         """Get pending messages for this consumer."""
         try:
             pending = await self.redis_client.xpending(
-                self.stream_name,
-                self.consumer_group,
-                "-",
-                "+",
-                100,  # Limit to 100 messages
-                self.consumer_name,
+                self.stream_name, self.consumer_group
             )
 
             messages = []

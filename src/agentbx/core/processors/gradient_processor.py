@@ -8,6 +8,7 @@ Output: gradient_data
 Applies chain rule: dT/dx = dT/dF * dF/dx
 """
 
+from typing import Any
 from typing import Dict
 from typing import List
 
@@ -107,7 +108,7 @@ class GradientProcessor(SinglePurposeProcessor):
         # In practice, this would calculate the L2 norm of all gradients
         return 0.0
 
-    def get_computation_info(self) -> Dict[str, str]:
+    def get_computation_info(self) -> Dict[str, Any]:
         """
         Get information about this processor's computational requirements.
         """
@@ -119,7 +120,7 @@ class GradientProcessor(SinglePurposeProcessor):
                 "xray_atomic_model_data",
             ],
             "output_types": ["gradient_data"],
-            "memory_usage": "high",
+            "memory_usage": "medium",
             "cpu_usage": "high",
             "gpu_usage": "optional",
         }
