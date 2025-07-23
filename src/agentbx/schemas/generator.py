@@ -459,12 +459,42 @@ class SchemaGenerator:
                 if asset_name in schema.asset_definitions:
                     asset_def = schema.asset_definitions[asset_name]
                     field_line = self.generate_asset_model(asset_name, asset_def)
-                    # Make it optional
-                    field_line = field_line.replace(
-                        " = Field(", " = Field(default=None, "
-                    )
-                    if " = ..." in field_line:
-                        field_line = field_line.replace(" = ...", " = None")
+                    # Make it optional - wrap type with Optional[...] and add default=None
+                    if ": " in field_line and " = " in field_line:
+                        # Parse the field line: "    field_name: Type = Field(...)"
+                        parts = field_line.split(": ", 1)
+                        if len(parts) == 2:
+                            field_name_part = parts[0]  # "    field_name"
+                            type_and_field_part = parts[
+                                1
+                            ]  # "Type = Field(...)" or "Type = ..."
+
+                            if " = " in type_and_field_part:
+                                type_part, field_part = type_and_field_part.split(
+                                    " = ", 1
+                                )
+
+                                # For optional assets, wrap type with Optional[...] for mypy compliance
+                                if not type_part.startswith("Optional["):
+                                    type_part = f"Optional[{type_part}]"
+
+                                # Always use Field(default=None, ...) for optional fields
+                                if field_part == "...":
+                                    field_part = "Field(default=None)"
+                                elif field_part.startswith("Field("):
+                                    # Insert default=None as the first argument if not present
+                                    if "default=None" not in field_part:
+                                        field_part = field_part.replace(
+                                            "Field(", "Field(default=None, ", 1
+                                        )
+                                else:
+                                    # If it's just a value, set to None
+                                    field_part = "Field(default=None)"
+
+                                field_line = (
+                                    f"{field_name_part}: {type_part} = {field_part}"
+                                )
+
                     lines.append(field_line)
 
         lines.append("")
@@ -612,7 +642,7 @@ def main() -> int:
 
         # Show usage hint
         print("\n💡 Usage:")
-        print(f"   from {args.output.stem} import AtomicModelDataBundle")
+        print(f"   from {args.output.stem} import XrayAtomicModelDataBundle")
 
         if args.watch:
             watch_for_changes(generator, args.schemas_dir, args.output, args.verbose)

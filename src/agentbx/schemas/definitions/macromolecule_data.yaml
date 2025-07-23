@@ -1,0 +1,105 @@
+# src/agentbx/schemas/definitions/macromolecule_data.yaml
+# Central macromolecule representation with PDB hierarchy
+
+task_type: macromolecule_data
+description: "Central macromolecule representation with PDB hierarchy"
+
+required_assets:
+  - pdb_hierarchy
+  - crystal_symmetry
+
+optional_assets:
+  - model_manager
+  - restraint_manager
+  - xray_structure
+  - macromolecule_metadata
+
+asset_definitions:
+  pdb_hierarchy:
+    description: "CCTBX PDB hierarchy with full atomic model information"
+    data_type: "iotbx.pdb.hierarchy.root"
+    required_attributes: ["atoms", "chains", "models"]
+    checksum_required: true
+
+  crystal_symmetry:
+    description: "Crystal symmetry (unit cell and space group)"
+    data_type: "cctbx.crystal.symmetry"
+    required_attributes: ["unit_cell", "space_group"]
+    checksum_required: true
+
+  model_manager:
+    description: "MMTBX model manager with geometry restraints"
+    data_type: "mmtbx.model.manager"
+    required_attributes: ["get_restraints_manager", "set_sites_cart"]
+    depends_on: [pdb_hierarchy]
+
+  restraint_manager:
+    description: "Geometry restraints manager"
+    data_type: "mmtbx.restraints.manager"
+    required_attributes: ["geometry", "bond_proxies", "angle_proxies"]
+    depends_on: [model_manager]
+
+  xray_structure:
+    description: "X-ray structure derived from PDB hierarchy"
+    data_type: "cctbx.xray.structure"
+    required_attributes:
+      ["scatterers", "unit_cell", "space_group", "sites_cart"]
+    depends_on: [pdb_hierarchy]
+
+  macromolecule_metadata:
+    description: "Macromolecule provenance and quality info"
+    data_type: "dict"
+    expected_keys:
+      ["source_file", "n_atoms", "n_chains", "n_residues", "resolution"]
+
+validation_rules:
+  pdb_hierarchy:
+    - has_atoms: true
+    - has_chains: true
+    - valid_coordinates: true
+    - finite_coordinates: true
+
+  crystal_symmetry:
+    - valid_unit_cell: true
+    - valid_space_group: true
+    - positive_unit_cell: true
+
+  model_manager:
+    - has_restraints: true
+    - coordinates_synchronized: true
+
+  xray_structure:
+    - has_scatterers: true
+    - scatterers_match_hierarchy: true
+    - coordinates_synchronized: true
+
+workflow_patterns:
+  macromolecule_creation:
+    - requires: [pdb_file]
+    - produces: [pdb_hierarchy, crystal_symmetry]
+    - method: "iotbx_pdb_input"
+
+  xray_structure_derivation:
+    - requires: [macromolecule_data]
+    - produces: [xray_structure]
+    - method: "hierarchy_to_xray_structure"
+
+  geometry_restraints_derivation:
+    - requires: [macromolecule_data]
+    - produces: [model_manager, restraint_manager]
+    - method: "mmtbx_model_manager"
+
+  coordinate_update:
+    - requires: [macromolecule_data, new_coordinates]
+    - modifies: [pdb_hierarchy, xray_structure, model_manager]
+    - preserves: [crystal_symmetry, restraint_manager]
+    - method: "synchronized_coordinate_update"
+
+dependencies:
+  - pdb_file # Input PDB file
+
+produces_for:
+  - xray_atomic_model_data # For structure factor calculations
+  - geometry_gradient_data # For geometry restraint gradients
+  - optimization_data # For coordinate optimization
+  - validation_data # For model validation

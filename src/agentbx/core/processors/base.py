@@ -1,4 +1,4 @@
-# src/agentbx/agents/base.py
+# src/agentbx/processors/base.py
 """
 Base classes for agentbx processors.
 
@@ -11,8 +11,8 @@ from typing import Any
 from typing import Dict
 from typing import List
 
-from ..core.base_client import BaseClient
-from ..core.bundle_base import Bundle
+from agentbx.core.base_client import BaseClient
+from agentbx.core.bundle_base import Bundle
 
 
 class SinglePurposeProcessor(BaseClient, ABC):

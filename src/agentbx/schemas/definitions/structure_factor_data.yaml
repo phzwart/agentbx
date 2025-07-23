@@ -71,19 +71,19 @@ validation_rules:
 
 workflow_patterns:
   basic_calculation:
-    - requires: [atomic_model_data]
-    - produces: [f_calc, miller_indices]
+    - requires: [xray_atomic_model_data]
+    - produces: [f_calc]
 
   with_bulk_solvent:
-    - requires: [atomic_model_data.bulk_solvent_params]
-    - produces: [f_calc, f_mask, f_model, scale_factors]
+    - requires: [xray_atomic_model_data.bulk_solvent_params]
+    - produces: [f_mask, f_model]
 
   structure_factor_derivatives:
-    - input: [structure_factor_data]
-    - output: [structure_factor_gradients]
+    - input: [xray_atomic_model_data]
+    - output: [f_calc, scale_factors]
 
 dependencies:
-  - atomic_model_data # Input bundle type
+  - xray_atomic_model_data # Input bundle type
 
 produces_for:
   - target_data # Can be input to target calculations

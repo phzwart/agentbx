@@ -9,7 +9,7 @@ The version is stored in a single source of truth: `src/agentbx/_version.py`
 ```python
 """Version information for agentbx."""
 
-__version__ = "1.0.1"
+__version__ = "1.0.4"
 ```
 
 All other files import the version from this central location:
@@ -24,7 +24,7 @@ All other files import the version from this central location:
 
 ```bash
 # Update to a new version
-python scripts/sync_version.py 1.0.2
+python scripts/sync_version.py 1.0.4
 
 # This will update:
 # - src/agentbx/_version.py
@@ -53,7 +53,7 @@ The GitHub Actions workflows automatically:
 
 1. Check if the current version has been tagged
 2. Sync the version across all files
-3. Build and publish the package
+3. Build and publish the package to PyPI
 4. Create a Git tag for the release
 
 ## Benefits

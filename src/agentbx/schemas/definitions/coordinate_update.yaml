@@ -1,0 +1,35 @@
+# src/agentbx/schemas/definitions/coordinate_update.yaml
+# Coordinate update bundle for geometry minimization
+
+task_type: coordinate_update
+description: "Coordinate update bundle for geometry minimization and agent communication."
+
+required_assets:
+  - coordinates
+  - parent_bundle_id
+
+optional_assets:
+  - step
+  - timestamp
+
+dialect:
+  type: string
+  enum: [numpy, cctbx]
+  description: Specifies the array type used for coordinates (e.g., numpy, cctbx, torch).
+
+asset_definitions:
+  coordinates:
+    description: "Atomic coordinates after update (shape: [N, 3])"
+    data_type: "list"
+    shape: "[n_atoms, 3]"
+    units: "angstroms"
+    checksum_required: true
+  parent_bundle_id:
+    description: "ID of the parent macromolecule bundle"
+    data_type: "str"
+  step:
+    description: "Optimization step number"
+    data_type: "int"
+  timestamp:
+    description: "Timestamp of update (seconds since epoch)"
+    data_type: "float"

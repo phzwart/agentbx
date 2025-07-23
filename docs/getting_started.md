@@ -29,12 +29,19 @@ poetry install
 ```python
 from agentbx.core.redis_manager import RedisManager
 from agentbx.agents.structure_factor_agent import StructureFactorProcessor
+from agentbx.schemas.generated import XrayAtomicModelDataBundle
 
 # Initialize Redis manager
 redis_manager = RedisManager(host="localhost", port=6379)
 
 # Create a structure factor processor
 processor = StructureFactorProcessor(redis_manager, "sf_processor_001")
+
+# Create a bundle
+bundle = XrayAtomicModelDataBundle(
+    xray_structure=your_structure,
+    miller_indices=your_indices
+)
 
 # Your processor is ready to process crystallographic data!
 ```
@@ -68,10 +75,10 @@ Processors are single-purpose components that handle specific crystallographic t
 Bundles are data containers that hold related crystallographic information:
 
 ```python
-from agentbx.schemas.generated import AtomicModelDataBundle
+from agentbx.schemas.generated import XrayAtomicModelDataBundle
 
 # Create a bundle for atomic model data
-bundle = AtomicModelDataBundle(
+bundle = XrayAtomicModelDataBundle(
     xray_structure=your_structure,
     miller_indices=your_indices
 )

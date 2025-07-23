@@ -1,3 +1,6 @@
+# DEPRECATED: This file is being partitioned into io, structures,
+# reciprocal_space, and maps submodules. Please add new code to those
+# locations.
 """
 Utilities for handling crystallographic data files and creating bundles.
 """
@@ -9,6 +12,8 @@ from typing import Any
 from typing import Dict
 from typing import Optional
 from typing import Tuple
+
+from agentbx.schemas.generated import XrayAtomicModelDataBundle
 
 
 logger = logging.getLogger(__name__)
@@ -188,7 +193,7 @@ def create_atomic_model_bundle(
     Returns:
         Bundle with atomic model data
     """
-    from ..core.bundle_base import Bundle
+    from agentbx.core.bundle_base import Bundle
 
     handler = CrystallographicFileHandler()
 
@@ -203,7 +208,7 @@ def create_atomic_model_bundle(
         miller_indices = _create_synthetic_miller_indices(xray_structure)
 
     # Create bundle
-    bundle = Bundle(bundle_type="atomic_model_data")
+    bundle = Bundle(bundle_type="xray_atomic_model_data")
     bundle.add_asset("xray_structure", xray_structure)
     bundle.add_asset("miller_indices", miller_indices)
 
@@ -235,6 +240,15 @@ def create_atomic_model_bundle(
 
     for key, value in metadata.items():
         bundle.add_metadata(key, value)
+
+    # Validate with schema
+    XrayAtomicModelDataBundle(
+        xray_structure=xray_structure,
+        miller_indices=miller_indices,
+        bulk_solvent_params=bulk_solvent_params,
+        model_metadata=metadata,
+    )
+    print("[Schema Validation] XrayAtomicModelDataBundle validation successful.")
 
     logger.info(
         f"Created atomic model bundle with {len(xray_structure.scatterers())} atoms"

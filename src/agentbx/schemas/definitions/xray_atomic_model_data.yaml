@@ -1,7 +1,7 @@
-# src/agentbx/schemas/definitions/atomic_model_data.yaml
+# src/agentbx/schemas/definitions/xray_atomic_model_data.yaml
 # Pure atomic model representation - no target functions, no gradients
 
-task_type: atomic_model_data
+task_type: xray_atomic_model_data
 description: "Atomic model data for structure factor calculations"
 
 required_assets:

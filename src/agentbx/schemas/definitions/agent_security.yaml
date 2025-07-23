@@ -1,0 +1,136 @@
+# src/agentbx/schemas/definitions/agent_security.yaml
+# Agent security and authorization configuration
+
+task_type: agent_security
+description: "Agent security and authorization configuration"
+
+required_assets:
+  - agent_registration
+  - permissions
+
+optional_assets:
+  - capabilities
+  - whitelisted_modules
+  - instruction_triggers
+  - security_policies
+
+asset_definitions:
+  agent_registration:
+    description: "Agent registration and validation information"
+    data_type: "agentbx.core.agent_security.AgentRegistration"
+    required_attributes: ["agent_id", "agent_name", "agent_type", "permissions"]
+    checksum_required: true
+
+  permissions:
+    description: "List of granted permissions for the agent"
+    data_type: "list"
+    allowed_values:
+      - "geometry_calculation"
+      - "structure_factor_calculation"
+      - "target_calculation"
+      - "gradient_calculation"
+      - "bundle_read"
+      - "bundle_write"
+      - "bundle_delete"
+      - "coordinate_update"
+      - "experimental_data_processing"
+    validation_rules:
+      - unique_permissions: true
+      - valid_permission_names: true
+
+  capabilities:
+    description: "Agent capabilities and their schemas"
+    data_type: "list"
+    schema:
+      name: "string"
+      description: "string"
+      permissions: "list"
+      input_schema: "dict"
+      output_schema: "dict"
+      timeout_seconds: "integer"
+      max_retries: "integer"
+
+  whitelisted_modules:
+    description: "Modules the agent is allowed to import and use"
+    data_type: "list"
+    allowed_modules:
+      - "cctbx"
+      - "mmtbx"
+      - "iotbx"
+      - "libtbx"
+      - "scitbx"
+      - "agentbx.processors"
+      - "agentbx.core"
+      - "torch"
+      - "numpy"
+      - "scipy"
+    validation_rules:
+      - safe_module_imports: true
+      - no_system_modules: true
+
+  instruction_triggers:
+    description: "Valid instruction triggers for this agent"
+    data_type: "list"
+    schema:
+      trigger_id: "string"
+      capability_name: "string"
+      input_schema: "dict"
+      priority: "integer"
+      timeout_seconds: "integer"
+
+  security_policies:
+    description: "Security policies for the agent"
+    data_type: "dict"
+    expected_keys:
+      - "max_execution_time"
+      - "memory_limit_mb"
+      - "cpu_limit_percent"
+      - "allowed_file_paths"
+      - "network_access"
+      - "sandbox_mode"
+
+validation_rules:
+  agent_registration:
+    - valid_agent_id: true
+    - unique_agent_name: true
+    - valid_agent_type: true
+
+  permissions:
+    - no_duplicate_permissions: true
+    - valid_permission_names: true
+    - least_privilege_principle: true
+
+  capabilities:
+    - unique_capability_names: true
+    - valid_input_schemas: true
+    - valid_output_schemas: true
+    - reasonable_timeouts: true
+
+  whitelisted_modules:
+    - safe_module_list: true
+    - no_dangerous_imports: true
+    - module_version_check: true
+
+workflow_patterns:
+  agent_registration:
+    - requires: [agent_configuration]
+    - produces: [agent_registration, permissions]
+    - method: "security_validation"
+
+  capability_definition:
+    - requires: [agent_registration]
+    - produces: [capabilities]
+    - method: "capability_validation"
+
+  instruction_validation:
+    - requires: [agent_registration, capabilities]
+    - validates: [instruction_triggers]
+    - method: "instruction_security_check"
+
+dependencies:
+  - agent_configuration # Input agent configuration
+
+produces_for:
+  - agent_execution # For agent runtime
+  - instruction_validation # For instruction processing
+  - security_audit # For security monitoring

@@ -1,0 +1,109 @@
+# src/agentbx/schemas/definitions/agent_configuration.yaml
+# Agent configuration and capabilities
+
+task_type: agent_configuration
+description: "Agent configuration and capability definitions"
+
+required_assets:
+  - agent_definition
+  - capabilities
+
+optional_assets:
+  - security_policies
+  - resource_limits
+  - monitoring_config
+
+asset_definitions:
+  agent_definition:
+    description: "Basic agent definition"
+    data_type: "dict"
+    required_keys:
+      - "agent_id"
+      - "agent_name"
+      - "agent_type"
+      - "version"
+    optional_keys:
+      - "description"
+      - "author"
+      - "contact"
+
+  capabilities:
+    description: "Agent capabilities and their configurations"
+    data_type: "list"
+    schema:
+      name: "string"
+      description: "string"
+      input_schema: "dict"
+      output_schema: "dict"
+      timeout_seconds: "integer"
+      max_retries: "integer"
+      permissions: "list"
+      resource_requirements: "dict"
+
+  security_policies:
+    description: "Security policies for the agent"
+    data_type: "dict"
+    expected_keys:
+      - "allowed_modules"
+      - "file_access"
+      - "network_access"
+      - "execution_limits"
+
+  resource_limits:
+    description: "Resource limits for the agent"
+    data_type: "dict"
+    expected_keys:
+      - "max_memory_mb"
+      - "max_cpu_percent"
+      - "max_execution_time"
+      - "max_concurrent_operations"
+
+  monitoring_config:
+    description: "Monitoring configuration for the agent"
+    data_type: "dict"
+    expected_keys:
+      - "metrics_enabled"
+      - "log_level"
+      - "health_check_interval"
+      - "alert_thresholds"
+
+validation_rules:
+  agent_definition:
+    - valid_agent_id: true
+    - unique_agent_name: true
+    - valid_version_format: true
+
+  capabilities:
+    - unique_capability_names: true
+    - valid_schemas: true
+    - reasonable_limits: true
+
+  security_policies:
+    - safe_module_list: true
+    - restricted_file_access: true
+    - limited_network_access: true
+
+workflow_patterns:
+  agent_validation:
+    - requires: [agent_configuration]
+    - produces: [validated_agent]
+    - method: "security_validation"
+
+  capability_registration:
+    - requires: [capabilities]
+    - produces: [registered_capabilities]
+    - method: "capability_registration"
+
+  security_setup:
+    - requires: [security_policies]
+    - produces: [active_security]
+    - method: "security_policy_application"
+
+dependencies:
+  - agent_security # Security configuration
+  - redis_streams # Stream configuration
+
+produces_for:
+  - agent_execution # For agent runtime
+  - capability_discovery # For capability lookup
+  - security_monitoring # For security monitoring

@@ -199,7 +199,6 @@ def install_poetry_export_plugin(session: Session) -> None:
         # The nox-poetry package will handle the export functionality
         print(f"Warning: Could not install poetry-plugin-export: {e}")
         print("Continuing without poetry-plugin-export...")
-        pass
 
 
 def is_python_executable_valid(python_executable: str) -> bool:  # nosec
@@ -257,6 +256,7 @@ def tests(session: Session) -> None:
     """Run the test suite."""
     session.install(".")
     session.install("coverage[toml]", "pytest", "pygments")
+    session.install("torch")
     try:
         session.run("coverage", "run", "--parallel", "-m", "pytest", *session.posargs)
     finally:
@@ -282,6 +282,7 @@ def typeguard(session: Session) -> None:
     """Runtime type checking using Typeguard."""
     session.install(".")
     session.install("pytest", "typeguard", "pygments")
+    session.install("torch")
     session.run("pytest", f"--typeguard-packages={package}", *session.posargs)
 
 

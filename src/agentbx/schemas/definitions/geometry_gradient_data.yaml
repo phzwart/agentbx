@@ -1,0 +1,125 @@
+# src/agentbx/schemas/definitions/geometry_gradient_data.yaml
+# Geometry gradients computed from CCTBX geometry restraints
+
+task_type: geometry_gradient_data
+description: "Geometry gradients computed from CCTBX geometry restraints"
+
+required_assets:
+  - coordinates
+  - geometric_gradients
+
+optional_assets:
+  - restraint_energies
+  - restraint_counts
+  - geometry_metadata
+
+asset_definitions:
+  coordinates:
+    description: "Atomic coordinates in Cartesian space"
+    data_type: "cctbx.array_family.flex.vec3_double"
+    shape: "[n_atoms, 3]"
+    units: "angstroms"
+    required_attributes: ["size", "data"]
+    checksum_required: true
+
+  geometric_gradients:
+    description: "Gradients of geometry restraints w.r.t. coordinates"
+    data_type: "cctbx.array_family.flex.vec3_double"
+    shape: "[n_atoms, 3]"
+    units: "energy_units/angstrom"
+    required_attributes: ["size", "data"]
+    checksum_required: true
+
+  restraint_energies:
+    description: "Individual restraint energies by type"
+    data_type: "dict"
+    expected_keys:
+      [
+        "bond_energy",
+        "angle_energy",
+        "dihedral_energy",
+        "chirality_energy",
+        "planarity_energy",
+        "total_energy",
+      ]
+    units: "energy_units"
+
+  restraint_counts:
+    description: "Number of restraints by type"
+    data_type: "dict"
+    expected_keys:
+      [
+        "bond_proxies",
+        "angle_proxies",
+        "dihedral_proxies",
+        "chirality_proxies",
+        "planarity_proxies",
+        "total_restraints",
+      ]
+
+  geometry_metadata:
+    description: "Metadata about geometry restraint computation"
+    data_type: "dict"
+    expected_keys:
+      [
+        "computation_method",
+        "restraint_types_used",
+        "gradient_norm",
+        "max_gradient",
+        "computation_time",
+      ]
+
+validation_rules:
+  coordinates:
+    - shape_matches_atoms: true
+    - finite_coordinates: true
+    - reasonable_coordinate_range: true
+
+  geometric_gradients:
+    - shape_matches_coordinates: true
+    - finite_gradients: true
+    - reasonable_gradient_magnitude: true
+
+  restraint_energies:
+    - all_energies_finite: true
+    - total_energy_positive: true
+
+  restraint_counts:
+    - all_counts_positive: true
+    - total_restraints_consistent: true
+
+workflow_patterns:
+  geometry_gradient_computation:
+    - requires: [xray_atomic_model_data]
+    - produces: [coordinates, geometric_gradients]
+    - method: "cctbx_geometry_restraints"
+
+  geometry_energy_computation:
+    - requires: [xray_atomic_model_data]
+    - produces: [coordinates, geometric_gradients, restraint_energies]
+    - method: "cctbx_geometry_restraints_with_energies"
+
+  full_geometry_analysis:
+    - requires: [xray_atomic_model_data]
+    - produces:
+        [
+          coordinates,
+          geometric_gradients,
+          restraint_energies,
+          restraint_counts,
+          geometry_metadata,
+        ]
+    - method: "cctbx_complete_geometry_analysis"
+
+dependencies:
+  - xray_atomic_model_data # Input atomic model
+
+produces_for:
+  - optimization_data # Gradients for coordinate optimization
+  - convergence_data # Gradient norms for convergence monitoring
+  - validation_data # Geometry quality assessment
+
+dialect:
+  type: string
+  enum: [numpy, cctbx]
+  description: Specifies the array type used for gradients (e.g., numpy, cctbx, torch).
