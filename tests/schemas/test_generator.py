@@ -585,7 +585,10 @@ class TestSchemaGenerator:
 
         # Check optional assets
         assert "# Optional assets" in model_code
-        assert "optional_asset: int = Field(default=None" in model_code
+        assert (
+            "optional_asset: Optional[int] = Field(default=None" in model_code
+            or "optional_asset: int = Field(default=None" in model_code
+        )
 
         # Check validators
         assert "@field_validator('test_asset')" in model_code

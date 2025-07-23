@@ -474,17 +474,22 @@ class SchemaGenerator:
                                     " = ", 1
                                 )
 
-                                # Wrap type with Optional if not already wrapped
+                                # For optional assets, wrap type with Optional[...] for mypy compliance
                                 if not type_part.startswith("Optional["):
                                     type_part = f"Optional[{type_part}]"
 
-                                # Add default=None to Field or replace ... with None
+                                # Always use Field(default=None, ...) for optional fields
                                 if field_part == "...":
-                                    field_part = "None"
+                                    field_part = "Field(default=None)"
                                 elif field_part.startswith("Field("):
-                                    field_part = field_part.replace(
-                                        "Field(", "Field(default=None, "
-                                    )
+                                    # Insert default=None as the first argument if not present
+                                    if "default=None" not in field_part:
+                                        field_part = field_part.replace(
+                                            "Field(", "Field(default=None, ", 1
+                                        )
+                                else:
+                                    # If it's just a value, set to None
+                                    field_part = "Field(default=None)"
 
                                 field_line = (
                                     f"{field_name_part}: {type_part} = {field_part}"
