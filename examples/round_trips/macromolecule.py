@@ -78,6 +78,12 @@ def compute_total_energy(restraint_manager, model_manager):
         return None, None
 
 
+def refresh_restraint_manager(model_manager):
+    """Refresh the restraint manager for round trip test."""
+    model_manager.process(make_restraints=True)
+    return model_manager.get_restraints_manager()
+
+
 def setup_logging():
     """Setup logging for the test."""
     logging.basicConfig(
@@ -92,7 +98,7 @@ def debug_space_group_serialization(redis_manager, processor, pdb_file):
 
     # Create bundle
     bundle_id = processor.create_macromolecule_bundle(pdb_file)
-    original_bundle = processor.get_bundle(bundle_id)
+    original_bundle = redis_manager.get_bundle(bundle_id)
     original_crystal_symmetry = original_bundle.get_asset("crystal_symmetry")
 
     # Get original space group details
@@ -200,13 +206,13 @@ def test_basic_round_trip(redis_manager, processor, pdb_file):
 
     # Step 2: Get original bundle and extract key components
     print("2. Extracting original components...")
-    original_bundle = processor.get_bundle(bundle_id)
+    original_bundle = redis_manager.get_bundle(bundle_id)
 
     # Extract key components for comparison
     original_hierarchy = original_bundle.get_asset("pdb_hierarchy")
     original_xray_structure = original_bundle.get_asset("xray_structure")
     original_model_manager = original_bundle.get_asset("model_manager")
-    original_restraint_manager = original_bundle.get_asset("restraint_manager")
+    original_restraint_manager = refresh_restraint_manager(original_model_manager)
     original_crystal_symmetry = original_bundle.get_asset("crystal_symmetry")
 
     # Compute original total energy
@@ -240,14 +246,14 @@ def test_basic_round_trip(redis_manager, processor, pdb_file):
 
     # Step 4: Retrieve bundle from Redis
     print("4. Retrieving bundle from Redis...")
-    retrieved_bundle = processor.get_bundle(bundle_id)
+    retrieved_bundle = redis_manager.get_bundle(bundle_id)
 
     # Step 5: Extract retrieved components
     print("5. Extracting retrieved components...")
     retrieved_hierarchy = retrieved_bundle.get_asset("pdb_hierarchy")
     retrieved_xray_structure = retrieved_bundle.get_asset("xray_structure")
     retrieved_model_manager = retrieved_bundle.get_asset("model_manager")
-    retrieved_restraint_manager = retrieved_bundle.get_asset("restraint_manager")
+    retrieved_restraint_manager = refresh_restraint_manager(retrieved_model_manager)
     retrieved_crystal_symmetry = retrieved_bundle.get_asset("crystal_symmetry")
 
     # Print model_manager and restraint_manager info
@@ -258,6 +264,8 @@ def test_basic_round_trip(redis_manager, processor, pdb_file):
         print(
             f"Model manager restraints: {retrieved_model_manager.get_restraints_manager()}"
         )
+    # Always refresh the restraint manager after deserialization
+    retrieved_restraint_manager = refresh_restraint_manager(retrieved_model_manager)
     print(f"Restraint manager: {retrieved_restraint_manager}")
     print(f"Restraint manager type: {type(retrieved_restraint_manager)}")
     if hasattr(retrieved_restraint_manager, "geometry"):
@@ -451,7 +459,7 @@ def test_coordinate_update_round_trip(redis_manager, processor, bundle_id):
     print("\n=== Testing Coordinate Update Round Trip ===")
 
     # Get original bundle
-    original_bundle = processor.get_bundle(bundle_id)
+    original_bundle = redis_manager.get_bundle(bundle_id)
     original_xray_structure = original_bundle.get_asset("xray_structure")
     original_sites = original_xray_structure.sites_cart()
 
@@ -478,7 +486,7 @@ def test_coordinate_update_round_trip(redis_manager, processor, bundle_id):
 
     # Retrieve updated bundle
     print("4. Retrieving updated bundle...")
-    updated_bundle = processor.get_bundle(updated_bundle_id)
+    updated_bundle = redis_manager.get_bundle(updated_bundle_id)
     updated_xray_structure = updated_bundle.get_asset("xray_structure")
     updated_sites = updated_xray_structure.sites_cart()
 
@@ -509,6 +517,14 @@ def test_coordinate_update_round_trip(redis_manager, processor, bundle_id):
     else:
         print("   ❌ COORDINATE UPDATE ROUND TRIP FAILED")
 
+    # Use numpy for coordinate comparison
+    import numpy as np
+
+    initial_np = np.array(original_sites)
+    updated_np = np.array(updated_sites)
+    change = np.linalg.norm(updated_np - initial_np)
+    print(f"Coordinate change: {change:.6f} A")
+
     return update_passed
 
 
@@ -526,7 +542,7 @@ def test_multiple_round_trips(redis_manager, processor, pdb_file, num_round_trip
         bundle_ids.append(bundle_id)
 
         # Retrieve bundle
-        bundle = processor.get_bundle(bundle_id)
+        bundle = redis_manager.get_bundle(bundle_id)
         hierarchy = bundle.get_asset("pdb_hierarchy")
         n_atoms = len(list(hierarchy.atoms()))
 
@@ -534,7 +550,7 @@ def test_multiple_round_trips(redis_manager, processor, pdb_file, num_round_trip
 
         # Compute energy and gradient norm
         model_manager = bundle.get_asset("model_manager")
-        restraint_manager = bundle.get_asset("restraint_manager")
+        restraint_manager = refresh_restraint_manager(model_manager)
         total_energy, gradient_norm = compute_total_energy(
             restraint_manager, model_manager
         )

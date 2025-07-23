@@ -105,7 +105,7 @@ def test_shake_and_energy():
 
         # Step 2: Get the bundle and extract initial coordinates
         print("4. Getting bundle from Redis...")
-        bundle = processor.get_bundle(bundle_id)
+        bundle = redis_manager.get_bundle(bundle_id)
         xray_structure = bundle.get_asset("xray_structure")
         initial_sites = xray_structure.sites_cart()
         print(f"   Initial coordinates: {len(initial_sites)} sites")
@@ -119,34 +119,28 @@ def test_shake_and_energy():
         print(f"   Shaken bundle stored: {shaken_bundle_id}")
 
         # Step 4: Get shaken coordinates for comparison
+        shaken_bundle = redis_manager.get_bundle(shaken_bundle_id)
         shaken_xray_structure = shaken_bundle.get_asset("xray_structure")
         shaken_sites = shaken_xray_structure.sites_cart()
         print(f"   Shaken coordinates: {len(shaken_sites)} sites")
 
         # Calculate coordinate change
-        import math
+        import numpy as np
 
-        total_change = 0.0
-        for i in range(len(initial_sites)):
-            dx = shaken_sites[i][0] - initial_sites[i][0]
-            dy = shaken_sites[i][1] - initial_sites[i][1]
-            dz = shaken_sites[i][2] - initial_sites[i][2]
-            total_change += math.sqrt(dx * dx + dy * dy + dz * dz)
+        total_change = np.linalg.norm(np.array(shaken_sites) - np.array(initial_sites))
         print(f"   Total coordinate change: {total_change:.6f} Å")
 
         # Step 5: Get restraint manager from Redis (deserialized)
         print("6. Getting restraint manager from Redis...")
-        retrieved_bundle = processor.get_bundle(shaken_bundle_id)
-        restraint_manager = retrieved_bundle.get_asset("restraint_manager")
+        retrieved_bundle = redis_manager.get_bundle(shaken_bundle_id)
         model_manager = retrieved_bundle.get_asset("model_manager")
-
+        # Always refresh the restraint manager after deserialization
+        restraint_manager = refresh_restraint_manager(model_manager)
         print(f"   Restraint manager type: {type(restraint_manager)}")
         print(f"   Model manager type: {type(model_manager)}")
 
-        # Step 6: Compute energy and gradient from deserialized object (stale restraint manager)
-        print(
-            "7. Computing energy and gradient from deserialized object (stale restraint manager)..."
-        )
+        # Step 6: Compute energy and gradient from refreshed restraint manager
+        print("7. Computing energy and gradient from refreshed restraint manager...")
         total_energy, gradient_norm = compute_total_energy(
             restraint_manager, model_manager
         )
@@ -177,8 +171,8 @@ def test_shake_and_energy():
 
         # Step 7: Compare with original bundle energy
         print("8. Comparing with original bundle energy...")
-        original_restraint_manager = bundle.get_asset("restraint_manager")
         original_model_manager = bundle.get_asset("model_manager")
+        original_restraint_manager = refresh_restraint_manager(original_model_manager)
         original_energy, original_gradient_norm = compute_total_energy(
             original_restraint_manager, original_model_manager
         )
