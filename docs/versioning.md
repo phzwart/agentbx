@@ -9,7 +9,7 @@ The version is stored in a single source of truth: `src/agentbx/_version.py`
 ```python
 """Version information for agentbx."""
 
-__version__ = "1.0.4"
+__version__ = "1.1.0"
 ```
 
 All other files import the version from this central location:
@@ -24,7 +24,7 @@ All other files import the version from this central location:
 
 ```bash
 # Update to a new version
-python scripts/sync_version.py 1.0.4
+python scripts/sync_version.py 1.1.0
 
 # This will update:
 # - src/agentbx/_version.py

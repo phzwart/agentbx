@@ -4,6 +4,54 @@
 
 The Async Geometry Agent System is a comprehensive solution for background geometry calculations in crystallographic software using CCTBX and Redis. It provides reliable, scalable, and secure processing of geometry gradient calculations with full integration into the AgentBX ecosystem.
 
+**⚠️ Experimental Status**: This system is currently experimental and subject to change. The API, features, and implementation details may evolve as development continues. We recommend using this system for research and development purposes only.
+
+**🎯 Focus Areas**: The system is specifically designed for handling crystallographic data and interfacing with protein foundation models. It provides specialized tools and workflows optimized for structural biology applications.
+
+## Experimental Status & Development Focus
+
+### Current Status
+
+This system is in active development and should be considered experimental:
+
+- **API Stability**: The API is not yet stable and may change between versions
+- **Feature Completeness**: Some features may be incomplete or subject to modification
+- **Performance**: Performance characteristics may vary and are being optimized
+- **Documentation**: Documentation may not reflect the latest implementation
+
+### Development Priorities
+
+The system is being developed with a specific focus on:
+
+1. **Crystallographic Data Processing**
+
+   - PDB structure handling and validation
+   - MTZ file processing for experimental data
+   - Electron density map generation and analysis
+   - Structure factor calculations
+
+2. **Protein Foundation Model Integration**
+
+   - Interface with protein language models
+   - Structure prediction and refinement
+   - Sequence-structure relationship modeling
+   - Multi-modal protein data processing
+
+3. **Structural Biology Workflows**
+   - Automated structure determination pipelines
+   - Model building and refinement
+   - Validation and quality assessment
+   - Collaborative structure analysis
+
+### Future Directions
+
+Planned development areas include:
+
+- Enhanced integration with protein foundation models (ESMFold, AlphaFold, etc.)
+- Advanced crystallographic data processing capabilities
+- Improved performance and scalability
+- Extended API stability and documentation
+
 ## Architecture
 
 ### Core Components
@@ -53,6 +101,8 @@ Redis Storage ← Bundle System ← Async Processing ← CCTBX Geometry
 - Security violation tracking
 
 ## Installation
+
+> **Note**: This is an experimental system. Please ensure you have a development environment set up and be prepared for potential API changes.
 
 ### Prerequisites
 
@@ -573,6 +623,8 @@ class RedisStreamManager:
 ```
 
 ## Contributing
+
+> **Experimental Development**: This system is in active development. When contributing, please be aware that the codebase is evolving and your contributions may need updates as the system matures.
 
 ### Development Setup
 

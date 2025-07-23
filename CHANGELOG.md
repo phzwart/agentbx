@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2024-07-23
+
 ### Added
 
 - Clear separation of **agents** (`src/agentbx/core/agents/`), **clients** (`src/agentbx/core/clients/`), and **processors** (`src/agentbx/processors/`).
