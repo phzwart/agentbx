@@ -43,6 +43,7 @@ This directory demonstrates an **asynchronous geometry minimization workflow** f
    ```bash
    python geometry_minimization_workflow.py --pdbfile /path/to/your.pdb --shake-magnitude 0.5
    ```
+
    - This will:
      - Start the async geometry agent
      - Load your PDB as a bundle
@@ -51,6 +52,7 @@ This directory demonstrates an **asynchronous geometry minimization workflow** f
      - Print results and convergence info
 
 3. **Test scripts**:
+
    - `test_minimizer_consumer.py`: Verifies consumer group and forward pass
    - `test_model_manager_serialization.py`: Checks bundle serialization
    - `test_refresh_functionality.py`: Shows effect of restraint refresh

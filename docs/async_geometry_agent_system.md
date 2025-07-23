@@ -496,11 +496,13 @@ async def process_batch(requests):
 ### Common Issues
 
 1. **Agent not responding**
+
    - Check Redis connection
    - Verify agent is registered
    - Check permissions
 
 2. **Messages not being processed**
+
    - Verify consumer group exists
    - Check stream configuration
    - Monitor dead letter queue
