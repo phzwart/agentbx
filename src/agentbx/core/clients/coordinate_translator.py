@@ -130,15 +130,16 @@ class CoordinateTranslator(nn.Module):
             PyTorch tensor
         """
         # Convert torch.dtype to numpy.dtype for ArrayTranslator
+        numpy_dtype: Any
         if self.dtype == torch.float32:
-            numpy_dtype = np.float32
+            numpy_dtype = np.dtype(np.float32)
         elif self.dtype == torch.float64:
-            numpy_dtype = np.float64
+            numpy_dtype = np.dtype(np.float64)
         elif self.dtype == torch.float16:
-            numpy_dtype = np.float16
+            numpy_dtype = np.dtype(np.float16)
         else:
             # Default fallback
-            numpy_dtype = np.float32
+            numpy_dtype = np.dtype(np.float32)
 
         # Use ArrayTranslator for conversion
         translator = ArrayTranslator(
@@ -170,15 +171,16 @@ class CoordinateTranslator(nn.Module):
             raise ValueError(f"Expected PyTorch tensor, got {type(tensor)}")
 
         # Convert torch.dtype to numpy.dtype for ArrayTranslator
+        numpy_dtype: Any
         if self.dtype == torch.float32:
-            numpy_dtype = np.float32
+            numpy_dtype = np.dtype(np.float32)
         elif self.dtype == torch.float64:
-            numpy_dtype = np.float64
+            numpy_dtype = np.dtype(np.float64)
         elif self.dtype == torch.float16:
-            numpy_dtype = np.float16
+            numpy_dtype = np.dtype(np.float16)
         else:
             # Default fallback
-            numpy_dtype = np.float32
+            numpy_dtype = np.dtype(np.float32)
 
         # Use ArrayTranslator for conversion
         translator = ArrayTranslator(
