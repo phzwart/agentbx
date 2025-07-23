@@ -254,21 +254,55 @@ class GeometryMinimizer(nn.Module):
             except Exception:
                 # Group already exists
                 pass
+
+            # Get the current timestamp to filter out old messages
+            current_time = time.time()
+            max_age_seconds = 30  # Ignore messages older than 30 seconds
+
             # Read from response stream
             start_time = time.time()
             while time.time() - start_time < self.timeout_seconds:
                 try:
-                    # Read messages from the stream
+                    # Read messages from the stream - use ">" to get only new messages
                     messages = await self.async_redis_client.xreadgroup(
                         self.consumer_group,
                         self.consumer_name,
                         {self.response_stream_name: ">"},
-                        count=1,
+                        count=10,  # Read more messages to find the latest
                         block=1000,
                     )
                     if messages:
                         for stream, message_list in messages:
+                            # Sort messages by timestamp to get the latest
+                            valid_messages = []
                             for message_id, fields in message_list:
+                                # Check message timestamp
+                                timestamp_str = fields.get(b"timestamp", b"").decode(
+                                    "utf-8"
+                                )
+                                try:
+                                    # Parse timestamp and check if it's recent
+                                    from datetime import datetime
+
+                                    msg_time = datetime.fromisoformat(
+                                        timestamp_str.replace("Z", "+00:00")
+                                    )
+                                    msg_timestamp = msg_time.timestamp()
+                                    if current_time - msg_timestamp < max_age_seconds:
+                                        valid_messages.append(
+                                            (message_id, fields, msg_timestamp)
+                                        )
+                                except Exception:
+                                    # If timestamp parsing fails, assume it's recent
+                                    valid_messages.append(
+                                        (message_id, fields, current_time)
+                                    )
+
+                            # Sort by timestamp (newest first) and process the latest
+                            if valid_messages:
+                                valid_messages.sort(key=lambda x: x[2], reverse=True)
+                                message_id, fields, _ = valid_messages[0]
+
                                 # Parse response
                                 response_data = fields.get(b"response", b"{}")
                                 if isinstance(response_data, bytes):
@@ -276,6 +310,14 @@ class GeometryMinimizer(nn.Module):
                                 response_dict = json.loads(response_data)
                                 bundle_id = response_dict.get("geometry_bundle_id")
                                 if bundle_id:
+                                    # Add debugging for received bundle ID
+                                    self.logger.info(
+                                        f"Received bundle ID from stream: {bundle_id}"
+                                    )
+                                    self.logger.info(
+                                        f"Full response dict: {response_dict}"
+                                    )
+
                                     # Acknowledge message
                                     await self.async_redis_client.xack(
                                         self.response_stream_name,
@@ -286,6 +328,14 @@ class GeometryMinimizer(nn.Module):
                                         f"Received geometry response: {bundle_id}"
                                     )
                                     return bundle_id
+
+                                # Acknowledge other messages to clear them from the stream
+                                for msg_id, _, _ in valid_messages[1:]:
+                                    await self.async_redis_client.xack(
+                                        self.response_stream_name,
+                                        self.consumer_group,
+                                        msg_id,
+                                    )
                     await asyncio.sleep(0.1)
                 except Exception as e:
                     self.logger.warning(f"Error reading response stream: {e}")
@@ -335,13 +385,35 @@ class GeometryMinimizer(nn.Module):
 
         Raises:
             ValueError: If the gradient bundle dialect is not supported.
+            Exception: If bundle retrieval fails after retries.
         """
         # Request geometry calculation, get result bundle key
         result_bundle_key = await self._request_geometry_calculation(
             refresh_restraints=refresh_restraints
         )
-        # Load result bundle from Redis as a true Bundle
-        grad_bundle = self.redis_manager.get_bundle(result_bundle_key)
+
+        # Add retry logic for bundle retrieval
+        max_retries = 5
+        retry_delay = 0.1
+
+        for attempt in range(max_retries):
+            try:
+                # Load result bundle from Redis as a true Bundle
+                grad_bundle = self.redis_manager.get_bundle(result_bundle_key)
+                break
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    self.logger.error(
+                        f"Failed to retrieve bundle {result_bundle_key} after {max_retries} attempts: {e}"
+                    )
+                    raise
+                else:
+                    self.logger.warning(
+                        f"Bundle {result_bundle_key} not found, retrying in {retry_delay}s (attempt {attempt + 1}/{max_retries})"
+                    )
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2  # Exponential backoff
+
         dialect = grad_bundle.get_metadata("dialect")
 
         # Use ArrayTranslator for dialect-aware unpacking

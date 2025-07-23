@@ -482,6 +482,13 @@ class AsyncGeometryAgent:
     async def _send_response(self, response: GeometryResponse) -> None:
         """Send response to the response stream."""
         try:
+            # Add debugging for bundle ID
+            if response.geometry_bundle_id:
+                self.logger.info(
+                    f"Sending response with bundle ID: {response.geometry_bundle_id}"
+                )
+                self.logger.info(f"Response JSON: {response.model_dump_json()}")
+
             # Send response to response stream
             response_stream = f"{self.stream_name}_responses"
             if self.redis_client is None:

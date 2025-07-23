@@ -129,9 +129,20 @@ class CoordinateTranslator(nn.Module):
         Returns:
             PyTorch tensor
         """
+        # Convert torch.dtype to numpy.dtype for ArrayTranslator
+        if self.dtype == torch.float32:
+            numpy_dtype = np.float32
+        elif self.dtype == torch.float64:
+            numpy_dtype = np.float64
+        elif self.dtype == torch.float16:
+            numpy_dtype = np.float16
+        else:
+            # Default fallback
+            numpy_dtype = np.float32
+
         # Use ArrayTranslator for conversion
         translator = ArrayTranslator(
-            default_dtype=self.dtype, default_device=self.device
+            default_dtype=numpy_dtype, default_device=self.device
         )
         tensor = translator.convert(
             cctbx_array, "torch", requires_grad=self.requires_grad
@@ -158,9 +169,20 @@ class CoordinateTranslator(nn.Module):
         if not isinstance(tensor, torch.Tensor):
             raise ValueError(f"Expected PyTorch tensor, got {type(tensor)}")
 
+        # Convert torch.dtype to numpy.dtype for ArrayTranslator
+        if self.dtype == torch.float32:
+            numpy_dtype = np.float32
+        elif self.dtype == torch.float64:
+            numpy_dtype = np.float64
+        elif self.dtype == torch.float16:
+            numpy_dtype = np.float16
+        else:
+            # Default fallback
+            numpy_dtype = np.float32
+
         # Use ArrayTranslator for conversion
         translator = ArrayTranslator(
-            default_dtype=self.dtype, default_device=self.device
+            default_dtype=numpy_dtype, default_device=self.device
         )
         cctbx_array = translator.convert(tensor, "cctbx")
 
