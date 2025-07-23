@@ -63,7 +63,7 @@ class ArrayTranslator:
 
     def __init__(
         self,
-        default_dtype: np.dtype = np.float64,
+        default_dtype: np.dtype = np.dtype("float64"),
         default_device: torch.device = None,
         use_einops: bool = True,
     ):

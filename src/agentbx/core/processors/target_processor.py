@@ -14,6 +14,8 @@ Does NOT know about:
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
+from typing import Tuple  # noqa: F401
 
 from agentbx.core.bundle_base import Bundle
 from agentbx.schemas.generated import TargetDataBundle
@@ -149,7 +151,7 @@ class TargetProcessor(SinglePurposeProcessor):
         return result
 
     def calculate_target(
-        self, sf_bundle_id: str, exp_bundle_id: str, target_type: str = None
+        self, sf_bundle_id: str, exp_bundle_id: str, target_type: Optional[str] = None
     ) -> str:
         """
         Calculate target function from structure factor and experimental data bundles.

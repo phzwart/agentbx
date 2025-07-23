@@ -16,6 +16,8 @@ import logging
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
+from typing import Tuple  # noqa: F401
 
 from agentbx.core.bundle_base import Bundle
 from agentbx.schemas.generated import StructureFactorDataBundle
@@ -128,7 +130,10 @@ class StructureFactorProcessor(SinglePurposeProcessor):
         return None  # Placeholder
 
     def calculate_structure_factors(
-        self, model_bundle_id: str, d_min: float = None, include_gradients: bool = False
+        self,
+        model_bundle_id: str,
+        d_min: Optional[float] = None,
+        include_gradients: bool = False,
     ) -> str:
         """
         Calculate structure factors from atomic model bundle.

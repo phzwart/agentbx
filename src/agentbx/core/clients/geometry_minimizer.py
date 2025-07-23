@@ -17,6 +17,7 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 import torch
 import torch.nn as nn
@@ -60,8 +61,8 @@ class GeometryMinimizer(nn.Module):
         macromolecule_bundle_id: str,
         optimizer_factory: Any,  # Callable, required
         optimizer_kwargs: dict,
-        scheduler_factory: Any = None,  # Optional callable
-        scheduler_kwargs: dict = None,  # Optional dict
+        scheduler_factory: Optional[Any] = None,  # Optional callable
+        scheduler_kwargs: Optional[Dict[Any, Any]] = None,  # Optional dict
         max_iterations: int = 100,
         convergence_threshold: float = 1e-6,
         timeout_seconds: float = 30.0,
@@ -71,7 +72,7 @@ class GeometryMinimizer(nn.Module):
         request_stream_name: str = "geometry_requests",
         response_stream_name: str = "geometry_requests_responses",
         consumer_group: str = "minimizer_consumer",
-        consumer_name: str = None,
+        consumer_name: Optional[str] = None,
     ):
         """
         Initialize the geometry minimizer.
@@ -168,7 +169,7 @@ class GeometryMinimizer(nn.Module):
 
                 # Use ArrayTranslator for conversion
                 translator = ArrayTranslator(
-                    default_dtype=np.float64, default_device=self.device
+                    default_dtype=np.dtype("float64"), default_device=self.device
                 )
 
                 if dialect == "numpy":
@@ -192,7 +193,7 @@ class GeometryMinimizer(nn.Module):
 
                 # Use ArrayTranslator for CCTBX to torch conversion
                 translator = ArrayTranslator(
-                    default_dtype=np.float64, default_device=self.device
+                    default_dtype=np.dtype("float64"), default_device=self.device
                 )
                 coordinates_tensor = translator.convert(
                     sites_cart, "torch", requires_grad=True
@@ -301,7 +302,7 @@ class GeometryMinimizer(nn.Module):
         try:
             # Use ArrayTranslator for torch to CCTBX conversion
             translator = ArrayTranslator(
-                default_dtype=np.float64, default_device=self.device
+                default_dtype=np.dtype("float64"), default_device=self.device
             )
             cctbx_coordinates = translator.convert(new_coordinates, "cctbx")
 
@@ -320,7 +321,9 @@ class GeometryMinimizer(nn.Module):
             self.logger.error(f"Failed to update coordinates in bundle: {e}")
             raise
 
-    async def forward(self, refresh_restraints: bool = False) -> (torch.Tensor, str):
+    async def forward(
+        self, refresh_restraints: bool = False
+    ) -> Tuple[torch.Tensor, str]:
         """
         Forward pass: request geometry calculation and return gradients.
 
@@ -343,7 +346,7 @@ class GeometryMinimizer(nn.Module):
 
         # Use ArrayTranslator for dialect-aware unpacking
         translator = ArrayTranslator(
-            default_dtype=np.float64, default_device=self.device
+            default_dtype=np.dtype("float64"), default_device=self.device
         )
 
         if dialect == "numpy":
@@ -392,7 +395,7 @@ class GeometryMinimizer(nn.Module):
 
         # Convert coordinates to numpy list format for coordinate update bundle
         translator = ArrayTranslator(
-            default_dtype=np.float64, default_device=self.device
+            default_dtype=np.dtype("float64"), default_device=self.device
         )
         coordinates_numpy = translator.convert(
             self.current_coordinates.detach(), "numpy"
@@ -495,7 +498,7 @@ class GeometryMinimizer(nn.Module):
 
         # Update the macromolecule bundle with final coordinates
         translator = ArrayTranslator(
-            default_dtype=np.float64, default_device=self.device
+            default_dtype=np.dtype("float64"), default_device=self.device
         )
         coordinates_cctbx = translator.convert(
             self.current_coordinates.detach(), "cctbx"
