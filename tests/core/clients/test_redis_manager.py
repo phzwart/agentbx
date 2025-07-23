@@ -1,7 +1,6 @@
 """Tests for the RedisManager class."""
 
 import hashlib
-import json
 import pickle
 from datetime import datetime
 from unittest.mock import Mock
@@ -179,41 +178,37 @@ class TestRedisManager:
     def test_serialize_basic_types(self, redis_manager):
         """Test serialization of basic Python types."""
         # Test None
-        assert redis_manager._serialize(None) == b"null"
+        assert redis_manager._serialize(None) == pickle.dumps(None)
 
         # Test string
-        assert redis_manager._serialize("hello") == b'"hello"'
+        assert redis_manager._serialize("hello") == pickle.dumps("hello")
 
         # Test integer
-        assert redis_manager._serialize(42) == b"42"
+        assert redis_manager._serialize(42) == pickle.dumps(42)
 
         # Test float
-        assert redis_manager._serialize(3.14) == b"3.14"
+        assert redis_manager._serialize(3.14) == pickle.dumps(3.14)
 
         # Test boolean
-        assert redis_manager._serialize(True) == b"true"
-        assert redis_manager._serialize(False) == b"false"
+        assert redis_manager._serialize(True) == pickle.dumps(True)
+        assert redis_manager._serialize(False) == pickle.dumps(False)
 
     def test_serialize_containers(self, redis_manager):
         """Test serialization of container types."""
         # Test list
         data = [1, 2, 3]
         serialized = redis_manager._serialize(data)
-        assert json.loads(serialized.decode()) == data
+        assert pickle.loads(serialized) == data
 
         # Test dict
         data = {"key": "value", "number": 42}
         serialized = redis_manager._serialize(data)
-        assert json.loads(serialized.decode()) == data
+        assert pickle.loads(serialized) == data
 
         # Test tuple
         data = (1, 2, 3)
         serialized = redis_manager._serialize(data)
-        assert json.loads(serialized.decode()) == [
-            1,
-            2,
-            3,
-        ]  # Tuples become lists in JSON
+        assert pickle.loads(serialized) == data
 
     def test_serialize_complex_object(self, redis_manager):
         """Test serialization of complex objects using pickle."""
@@ -227,31 +222,31 @@ class TestRedisManager:
     def test_deserialize_basic_types(self, redis_manager):
         """Test deserialization of basic types."""
         # Test None
-        assert redis_manager._deserialize(b"null") is None
+        assert redis_manager._deserialize(pickle.dumps(None)) is None
 
         # Test string
-        assert redis_manager._deserialize(b'"hello"') == "hello"
+        assert redis_manager._deserialize(pickle.dumps("hello")) == "hello"
 
-        # Test integer - need to use JSON format
-        assert redis_manager._deserialize(b"42") == 42
+        # Test integer
+        assert redis_manager._deserialize(pickle.dumps(42)) == 42
 
-        # Test float - need to use JSON format
-        assert redis_manager._deserialize(b"3.14") == 3.14
+        # Test float
+        assert redis_manager._deserialize(pickle.dumps(3.14)) == 3.14
 
         # Test boolean
-        assert redis_manager._deserialize(b"true") is True
-        assert redis_manager._deserialize(b"false") is False
+        assert redis_manager._deserialize(pickle.dumps(True)) is True
+        assert redis_manager._deserialize(pickle.dumps(False)) is False
 
     def test_deserialize_containers(self, redis_manager):
         """Test deserialization of container types."""
         # Test list
         data = [1, 2, 3]
-        serialized = json.dumps(data).encode()
+        serialized = pickle.dumps(data)
         assert redis_manager._deserialize(serialized) == data
 
         # Test dict
         data = {"key": "value", "number": 42}
-        serialized = json.dumps(data).encode()
+        serialized = pickle.dumps(data)
         assert redis_manager._deserialize(serialized) == data
 
     def test_deserialize_complex_object(self, redis_manager):
@@ -261,21 +256,6 @@ class TestRedisManager:
         deserialized = redis_manager._deserialize(serialized)
 
         assert deserialized.value == "test"
-
-    def test_deserialize_json_fallback(self, redis_manager):
-        """Test deserialization fallback from JSON to pickle."""
-        obj = SampleObject("test")
-        serialized = pickle.dumps(obj)
-
-        # Create data that starts with JSON but contains pickle data
-        # This simulates the fallback scenario
-        json_start = b'{"invalid": "json"'
-        mixed_data = json_start + serialized
-
-        # Mock json.loads to fail
-        with patch("json.loads", side_effect=json.JSONDecodeError("", "", 0)):
-            deserialized = redis_manager._deserialize(mixed_data)
-            assert deserialized.value == "test"
 
     def test_generate_key(self, redis_manager):
         """Test key generation."""
@@ -637,46 +617,6 @@ class TestRedisManager:
                     assert (
                         mock_logger.info.call_count >= 0
                     )  # May not be called in current implementation
-
-    def test_deserialize_pickle_fallback_complex_scenario(self, redis_manager):
-        """Test the complex pickle fallback logic in _deserialize."""
-        # Create data that starts with JSON-like content but contains pickle data
-        # This triggers the fallback logic in lines 149-152
-        json_start = b'{"invalid": "json"'
-        pickle_data = pickle.dumps(SampleObject("test_value"))
-        mixed_data = json_start + pickle_data
-
-        # Mock json.loads to fail first, then succeed for the fallback
-        with patch(
-            "json.loads",
-            side_effect=[json.JSONDecodeError("", "", 0), {"test": "data"}],
-        ):
-            with patch("pickle.loads") as mock_pickle:
-                mock_pickle.return_value = SampleObject("test_value")
-
-                redis_manager._deserialize(mixed_data)
-
-                # Should have tried to find pickle protocol start (0x80)
-                assert mock_pickle.called
-
-    def test_deserialize_pickle_fallback_with_exception(self, redis_manager):
-        """Test pickle fallback when pickle.loads raises exception."""
-        # Create data that triggers the fallback logic
-        json_start = b'{"invalid": "json"'
-        pickle_data = pickle.dumps(SampleObject("test_value"))
-        mixed_data = json_start + pickle_data
-
-        # Mock json.loads to fail
-        with patch("json.loads", side_effect=json.JSONDecodeError("", "", 0)):
-            # Mock pickle.loads to fail first, then succeed
-            with patch(
-                "pickle.loads",
-                side_effect=[Exception("Pickle error"), SampleObject("test_value")],
-            ):
-                result = redis_manager._deserialize(mixed_data)
-
-                # Should fall back to unpickling the whole thing
-                assert isinstance(result, SampleObject)
 
     def test_cache_get_with_exception_and_logging(
         self, redis_manager, mock_redis_client

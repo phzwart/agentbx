@@ -64,7 +64,7 @@ async def test_refresh_functionality():
 
         # 2. Read in a PDB file and load as a macromolecule bundle
         pdb_path = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "../input.pdb")
+            os.path.join(os.path.dirname(__file__), "../data/small.pdb")
         )
         processor = MacromoleculeProcessor(redis_manager, "refresh_test_processor")
         macromolecule_bundle_id = processor.create_macromolecule_bundle(pdb_path)

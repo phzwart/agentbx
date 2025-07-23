@@ -92,7 +92,7 @@ def test_shake_and_energy():
     processor = MacromoleculeProcessor(redis_manager, "shake_test_processor")
 
     # Test file
-    pdb_file = "../input.pdb"
+    pdb_file = "../data/small.pdb"
     if not os.path.exists(pdb_file):
         print(f"❌ Test file not found: {pdb_file}")
         return False

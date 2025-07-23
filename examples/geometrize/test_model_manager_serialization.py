@@ -30,7 +30,7 @@ def test_model_manager_serialization():
     processor = MacromoleculeProcessor(redis_manager, "test_processor")
 
     # Test file
-    pdb_file = "../input.pdb"
+    pdb_file = "../data/small.pdb"
     if not os.path.exists(pdb_file):
         print(f"❌ Test file not found: {pdb_file}")
         return False

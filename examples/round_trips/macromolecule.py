@@ -618,8 +618,7 @@ def main():
 
     # Test files
     test_files = [
-        "../input.pdb",
-        "../small.pdb",
+        "../data/small.pdb",
     ]
 
     all_tests_passed = True

@@ -1,5 +1,6 @@
 # Agentbx: A Redis-Based Crystallographic Agent System
 
+[![PyPI Version](https://img.shields.io/pypi/v/agentbx.svg)](https://pypi.org/project/agentbx/)
 [![Python Version](https://img.shields.io/pypi/pyversions/agentbx)][pypi status]
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)][license]
 
@@ -106,6 +107,21 @@ Or install with Redis support:
 ```console
 $ pip install agentbx[redis-agents]
 ```
+
+## Publishing to PyPI
+
+To publish a new version to PyPI:
+
+1. Update the version using the sync script:
+   ```bash
+   python scripts/sync_version.py 1.0.4
+   ```
+2. Commit and push your changes.
+3. Ensure all tests pass and the package builds successfully.
+4. Publish to PyPI (requires credentials):
+   ```bash
+   poetry publish --build
+   ```
 
 ## Getting Started
 

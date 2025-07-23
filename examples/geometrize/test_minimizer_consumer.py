@@ -32,7 +32,7 @@ def parse_args():
     parser.add_argument(
         "--pdbfile",
         type=str,
-        default="small.pdb",
+        default="../data/small.pdb",
         help="Path to the input PDB file (default: small.pdb)",
     )
     parser.add_argument(

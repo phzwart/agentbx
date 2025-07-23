@@ -1,11 +1,12 @@
 """
 Script to download PDB files and associated data from the Protein Data Bank.
+
+Updated with correct URLs and modern PDB data access patterns.
 """
 
 import logging
 import os
 import sys
-from urllib.parse import urljoin
 
 import click
 import requests
@@ -20,14 +21,15 @@ class PDBDownloader:
     """Download PDB files and associated data from the Protein Data Bank."""
 
     def __init__(self):
+        # Updated to use the correct wwPDB URLs
         self.pdb_base_url = "https://files.rcsb.org/download/"
-        self.pdb_archive_url = "https://data.rcsb.org/pub/pdb/data/structures/all/pdb/"
+        self.wwpdb_base_url = "https://files.wwpdb.org/pub/pdb/data/structures/"
         self.session = requests.Session()
         self.session.headers.update(
             {"User-Agent": "agentbx/1.0 (https://github.com/phzwart/agentbx)"}
         )
 
-    def download_pdb_file(self, pdb_code: str, output_dir: str = "examples") -> str:
+    def download_pdb_file(self, pdb_code: str, output_dir: str = "data") -> str:
         """
         Download PDB file for a given PDB code.
 
@@ -39,77 +41,116 @@ class PDBDownloader:
             Path to downloaded PDB file
 
         Raises:
-            requests.exceptions.RequestException: If the download fails
-        """
-        pdb_code = pdb_code.lower()
-        pdb_file = f"{pdb_code}.pdb"
-        url = urljoin(self.pdb_base_url, pdb_file)
-
-        output_path = os.path.join(output_dir, "input.pdb")
-
-        logger.info(f"Downloading PDB file: {url}")
-        try:
-            response = self.session.get(url, timeout=30)
-            response.raise_for_status()
-
-            # Create output directory if it doesn't exist
-            os.makedirs(output_dir, exist_ok=True)
-
-            with open(output_path, "wb") as f:
-                f.write(response.content)
-
-            logger.info(f"Downloaded PDB file: {output_path}")
-            return output_path
-
-        except requests.exceptions.RequestException as e:
-            logger.error(f"Failed to download PDB file: {e}")
-            raise
-
-    def download_mtz_file(self, pdb_code: str, output_dir: str = "examples") -> str:
-        """
-        Download MTZ file for a given PDB code from PDB archive.
-
-        Args:
-            pdb_code: 4-letter PDB code (e.g., '1ubq')
-            output_dir: Directory to save the file
-
-        Returns:
-            Path to downloaded MTZ file
+            RequestException: If the download fails
         """
         pdb_code = pdb_code.lower()
 
-        # Try different possible MTZ file names
-        possible_mtz_names = [
-            f"{pdb_code}_phases.mtz",
-            f"{pdb_code}_reflections.mtz",
-            f"{pdb_code}_data.mtz",
-            f"{pdb_code}_sf.mtz",
+        # Try multiple sources for PDB files
+        urls_to_try = [
+            # Primary RCSB download service
+            f"{self.pdb_base_url}{pdb_code}.pdb",
+            # Alternative mmCIF format (more reliable)
+            f"{self.pdb_base_url}{pdb_code}.cif",
+            # wwPDB archive (with proper path structure)
+            f"{self.wwpdb_base_url}divided/pdb/{pdb_code[1:3]}/pdb{pdb_code}.ent.gz",
         ]
 
-        output_path = os.path.join(output_dir, "input.mtz")
+        output_path = os.path.join(output_dir, f"{pdb_code}.pdb")
 
-        for mtz_name in possible_mtz_names:
-            url = urljoin(self.pdb_archive_url, f"{pdb_code}/{mtz_name}")
-
-            logger.info(f"Trying to download MTZ file: {url}")
+        for url in urls_to_try:
+            logger.info(f"Trying to download PDB file: {url}")
             try:
                 response = self.session.get(url, timeout=30)
                 if response.status_code == 200:
                     # Create output directory if it doesn't exist
                     os.makedirs(output_dir, exist_ok=True)
 
-                    with open(output_path, "wb") as f:
-                        f.write(response.content)
+                    # Handle compressed files
+                    content = response.content
+                    if url.endswith(".gz"):
+                        import gzip
 
-                    logger.info(f"Downloaded MTZ file: {output_path}")
+                        content = gzip.decompress(content)
+
+                    # Convert mmCIF to PDB format if needed (basic conversion)
+                    if url.endswith(".cif"):
+                        # For now, save as-is but warn user
+                        output_path = os.path.join(output_dir, f"{pdb_code}.cif")
+                        logger.warning(
+                            "Downloaded mmCIF format. Consider using mmCIF-compatible tools."
+                        )
+
+                    with open(output_path, "wb") as f:
+                        f.write(content)
+
+                    logger.info(f"Successfully downloaded PDB file: {output_path}")
                     return output_path
 
             except requests.exceptions.RequestException as e:
-                logger.warning(f"Failed to download {mtz_name}: {e}")
+                logger.warning(f"Failed to download from {url}: {e}")
                 continue
 
-        # If no MTZ file found, try to generate one from PDB
-        logger.warning("No MTZ file found in PDB archive. Generating synthetic data...")
+        raise requests.exceptions.RequestException(
+            f"Failed to download PDB file for {pdb_code} from all sources"
+        )
+
+    def download_structure_factors(
+        self, pdb_code: str, output_dir: str = "data"
+    ) -> str:
+        """
+        Download structure factors for a given PDB code.
+
+        Args:
+            pdb_code: 4-letter PDB code (e.g., '1ubq')
+            output_dir: Directory to save the file
+
+        Returns:
+            Path to downloaded structure factors file
+        """
+        pdb_code = pdb_code.lower()
+
+        # Structure factors are now distributed as mmCIF files
+        # Path structure: divided/structure_factors/{middle_2_chars}/r{pdb_code}sf.ent.gz
+        middle_chars = pdb_code[1:3]
+
+        urls_to_try = [
+            # Primary structure factor location (mmCIF format)
+            f"{self.wwpdb_base_url}divided/structure_factors/{middle_chars}/r{pdb_code}sf.ent.gz",
+            # Alternative structure factor location
+            f"{self.wwpdb_base_url}all/structure_factors/r{pdb_code}sf.ent.gz",
+            # Try validation map coefficients (if available)
+            f"https://files.rcsb.org/pub/pdb/validation_reports/{middle_chars}/{pdb_code}/{pdb_code}_validation_2fo-fc_map_coef.cif.gz",
+        ]
+
+        output_path = os.path.join(output_dir, f"{pdb_code}_sf.cif")
+
+        for url in urls_to_try:
+            logger.info(f"Trying to download structure factors: {url}")
+            try:
+                response = self.session.get(url, timeout=30)
+                if response.status_code == 200:
+                    # Create output directory if it doesn't exist
+                    os.makedirs(output_dir, exist_ok=True)
+
+                    # Handle compressed files
+                    content = response.content
+                    if url.endswith(".gz"):
+                        import gzip
+
+                        content = gzip.decompress(content)
+
+                    with open(output_path, "wb") as f:
+                        f.write(content)
+
+                    logger.info(f"Downloaded structure factors: {output_path}")
+                    return output_path
+
+            except requests.exceptions.RequestException as e:
+                logger.warning(f"Failed to download structure factors from {url}: {e}")
+                continue
+
+        # If no structure factors found, try to generate synthetic data
+        logger.warning("No structure factor files found. Generating synthetic data...")
         return self._generate_synthetic_mtz(pdb_code, output_dir)
 
     def _generate_synthetic_mtz(self, pdb_code: str, output_dir: str) -> str:
@@ -136,7 +177,22 @@ class PDBDownloader:
             from iotbx import pdb
 
             # Read the PDB file we just downloaded
-            pdb_file = os.path.join(output_dir, "input.pdb")
+            pdb_files = [
+                os.path.join(output_dir, f"{pdb_code}.pdb"),
+                os.path.join(output_dir, f"{pdb_code}.cif"),
+            ]
+
+            pdb_file = None
+            for f in pdb_files:
+                if os.path.exists(f):
+                    pdb_file = f
+                    break
+
+            if not pdb_file:
+                raise RuntimeError(
+                    "No coordinate file found for synthetic data generation"
+                )
+
             pdb_input = pdb.input(file_name=pdb_file)
             xray_structure = pdb_input.xray_structure_simple()
 
@@ -170,7 +226,7 @@ class PDBDownloader:
             )
 
             # Write MTZ file
-            output_path = os.path.join(output_dir, "input.mtz")
+            output_path = os.path.join(output_dir, f"{pdb_code}.mtz")
             f_obs.as_mtz_dataset(column_root_label="F_obs").mtz_object().write(
                 output_path
             )
@@ -188,27 +244,27 @@ class PDBDownloader:
             raise
 
     def download_all_data(
-        self, pdb_code: str, output_dir: str = "examples"
+        self, pdb_code: str, output_dir: str = "data"
     ) -> tuple[str, str]:
         """
-        Download both PDB and MTZ files for a given PDB code.
+        Download both PDB and structure factor files for a given PDB code.
 
         Args:
             pdb_code: 4-letter PDB code (e.g., '1ubq')
             output_dir: Directory to save the files
 
         Returns:
-            Tuple of (pdb_file_path, mtz_file_path)
+            Tuple of (pdb_file_path, structure_factor_file_path)
         """
         logger.info(f"Downloading data for PDB code: {pdb_code.upper()}")
 
         # Download PDB file
         pdb_file = self.download_pdb_file(pdb_code, output_dir)
 
-        # Download or generate MTZ file
-        mtz_file = self.download_mtz_file(pdb_code, output_dir)
+        # Download structure factors
+        sf_file = self.download_structure_factors(pdb_code, output_dir)
 
-        return pdb_file, mtz_file
+        return pdb_file, sf_file
 
     def list_available_pdb_codes(self) -> list[str]:
         """
@@ -220,18 +276,51 @@ class PDBDownloader:
         return [
             "1ubq",  # Ubiquitin - small, well-determined structure
             "1lyd",  # Lysozyme - classic test case
-            "1crn",  # Crambin - small protein
+            "1crn",  # Crambin - small protein with excellent data
             "1hhb",  # Hemoglobin - medium size
             "1ake",  # Adenylate kinase - medium size
-            "1pdb",  # Trypsin inhibitor - small
+            "2pdb",  # Trypsin inhibitor - small
             "1a28",  # Alpha-lytic protease - medium
             "1bni",  # Barnase - small
             "1cbs",  # Cytochrome c - small
-            "1d66",  # DNA-binding protein - small
             "1ee2",  # Endothiapepsin - medium size
-            "2pdb",  # Trypsin inhibitor - small
-            "3pdb",  # Trypsin inhibitor - small
+            "1plc",  # Plastocyanin - high resolution small protein
+            "3ry4",  # FcγRIIa - high resolution
+            "5tro",  # Penicillin-binding protein - good resolution
         ]
+
+    def get_pdb_info(self, pdb_code: str) -> dict:
+        """
+        Get basic information about a PDB entry from the RCSB API.
+
+        Args:
+            pdb_code: 4-letter PDB code
+
+        Returns:
+            Dictionary with PDB entry information
+        """
+        api_url = f"https://data.rcsb.org/rest/v1/core/entry/{pdb_code.upper()}"
+
+        try:
+            response = self.session.get(api_url, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                return {
+                    "resolution": data.get("rcsb_entry_info", {}).get(
+                        "resolution_combined", "N/A"
+                    ),
+                    "method": data.get("exptl", [{}])[0].get("method", "Unknown"),
+                    "chains": data.get("rcsb_entry_info", {}).get(
+                        "polymer_entity_count_protein", 0
+                    ),
+                    "release_date": data.get("rcsb_accession_info", {}).get(
+                        "initial_release_date", "Unknown"
+                    ),
+                }
+        except Exception as e:
+            logger.warning(f"Could not fetch PDB info: {e}")
+
+        return {}
 
 
 def validate_pdb_code(pdb_code: str) -> bool:
@@ -256,12 +345,13 @@ def validate_pdb_code(pdb_code: str) -> bool:
 @click.option(
     "--output-dir",
     "-o",
-    default="examples",
+    default="data",
     help="Output directory for downloaded files",
 )
 @click.option("--list-available", "-l", is_flag=True, help="List available PDB codes")
 @click.option("--force", "-f", is_flag=True, help="Overwrite existing files")
-def main(pdb_code, output_dir, list_available, force):
+@click.option("--info", "-i", is_flag=True, help="Show PDB entry information")
+def main(pdb_code, output_dir, list_available, force, info):
     """
     Download PDB files and associated data from the Protein Data Bank.
 
@@ -278,7 +368,7 @@ def main(pdb_code, output_dir, list_available, force):
 
     if not pdb_code:
         click.echo("Please provide a PDB code or use --list-available to see options")
-        click.echo("Example: python examples/download_pdb_data.py 1ubq")
+        click.echo("Example: python download_pdb_data.py 1ubq")
         return
 
     # Validate PDB code
@@ -289,26 +379,55 @@ def main(pdb_code, output_dir, list_available, force):
         )
         return
 
-    # Check if files already exist
-    pdb_file = os.path.join(output_dir, "input.pdb")
-    mtz_file = os.path.join(output_dir, "input.mtz")
+    # Show PDB information if requested
+    if info:
+        click.echo(f"Getting information for PDB entry {pdb_code.upper()}...")
+        pdb_info = downloader.get_pdb_info(pdb_code)
+        if pdb_info:
+            click.echo(f"Resolution: {pdb_info.get('resolution', 'N/A')} Å")
+            click.echo(f"Method: {pdb_info.get('method', 'Unknown')}")
+            click.echo(f"Protein chains: {pdb_info.get('chains', 0)}")
+            click.echo(f"Release date: {pdb_info.get('release_date', 'Unknown')}")
+        return
 
-    if os.path.exists(pdb_file) or os.path.exists(mtz_file):
-        if not force:
-            click.echo("Files already exist. Use --force to overwrite.")
-            return
-        else:
-            click.echo("Overwriting existing files...")
+    # Check if files already exist
+    possible_files = [
+        os.path.join(output_dir, f"{pdb_code}.pdb"),
+        os.path.join(output_dir, f"{pdb_code}.cif"),
+        os.path.join(output_dir, f"{pdb_code}_sf.cif"),
+        os.path.join(output_dir, f"{pdb_code}.mtz"),
+    ]
+
+    existing_files = [f for f in possible_files if os.path.exists(f)]
+
+    if existing_files and not force:
+        click.echo("Files already exist:")
+        for f in existing_files:
+            click.echo(f"  - {f}")
+        click.echo("Use --force to overwrite.")
+        return
+    elif existing_files and force:
+        click.echo("Overwriting existing files...")
 
     try:
         # Download the data
-        pdb_path, mtz_path = downloader.download_all_data(pdb_code, output_dir)
+        coord_path, sf_path = downloader.download_all_data(pdb_code, output_dir)
 
         click.echo("✅ Download completed successfully!")
-        click.echo(f"PDB file: {pdb_path}")
-        click.echo(f"MTZ file: {mtz_path}")
-        click.echo("\nYou can now run the Redis structure factor example:")
-        click.echo("python examples/redis_structure_factor_example.py")
+        click.echo(f"Coordinate file: {coord_path}")
+        click.echo(f"Structure factor file: {sf_path}")
+
+        # Show some helpful information
+        pdb_info = downloader.get_pdb_info(pdb_code)
+        if pdb_info:
+            click.echo("\nPDB Entry Information:")
+            click.echo(f"  Resolution: {pdb_info.get('resolution', 'N/A')} Å")
+            click.echo(f"  Method: {pdb_info.get('method', 'Unknown')}")
+
+        click.echo("\n📝 Notes:")
+        click.echo("- Structure factors are now distributed in mmCIF format (.cif)")
+        click.echo("- Use tools like phenix.cif_as_mtz to convert to MTZ if needed")
+        click.echo("- Many modern crystallographic programs accept mmCIF directly")
 
     except Exception as e:
         click.echo(f"❌ Download failed: {e}")

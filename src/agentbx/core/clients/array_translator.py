@@ -225,12 +225,19 @@ class ArrayTranslator:
 
     def _detect_dialect(self, array: Any) -> str:
         """Detect the dialect of an array."""
-        if isinstance(array, (flex.double, flex.vec3_double)):
-            return "cctbx"
-        elif isinstance(array, np.ndarray):
+        try:
+            if isinstance(array, (flex.double, flex.vec3_double)):
+                return "cctbx"
+        except (TypeError, AttributeError):
+            # Handle cases where flex types are not properly loaded
+            pass
+
+        if isinstance(array, np.ndarray):
             return "numpy"
         elif isinstance(array, torch.Tensor):
             return "torch"
+        elif hasattr(array, "as_numpy_array"):  # Duck typing for CCTBX arrays
+            return "cctbx"
         else:
             raise ValueError(f"Cannot detect dialect for type: {type(array)}")
 
@@ -258,6 +265,8 @@ class ArrayTranslator:
             dtype = kwargs.get("dtype", torch.float32)
             requires_grad = kwargs.get("requires_grad", False)
 
+            if not numpy_array.flags.writeable:
+                numpy_array = numpy_array.copy()
             tensor = torch.from_numpy(numpy_array).to(device=device, dtype=dtype)
             if requires_grad:
                 tensor.requires_grad_(True)

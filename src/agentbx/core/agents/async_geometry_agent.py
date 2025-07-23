@@ -343,7 +343,7 @@ class AsyncGeometryAgent:
                                 if self.redis_client is None:
                                     raise RuntimeError(
                                         "redis_client is not initialized"
-                                    )
+                                    ) from None
                                 await self.redis_client.xack(
                                     self.stream_name, self.consumer_group, message_id
                                 )
@@ -360,7 +360,7 @@ class AsyncGeometryAgent:
                                 if self.redis_client is None:
                                     raise RuntimeError(
                                         "redis_client is not initialized"
-                                    )
+                                    ) from None
                                 await self.redis_client.xack(
                                     self.stream_name, self.consumer_group, message_id
                                 )
