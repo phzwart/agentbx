@@ -25,7 +25,6 @@ import torch.nn as nn
 import torch.optim as optim
 from cctbx.array_family import flex
 
-from agentbx.core.agents.async_geometry_agent import AsyncGeometryAgent
 from agentbx.core.clients.coordinate_translator import CoordinateTranslator
 from agentbx.core.processors.macromolecule_processor import MacromoleculeProcessor
 from agentbx.core.redis_manager import RedisManager
@@ -59,13 +58,20 @@ class GeometryMinimizer(nn.Module):
         self,
         redis_manager: RedisManager,
         macromolecule_bundle_id: str,
-        learning_rate: float = 0.01,
-        optimizer: str = "adam",
+        optimizer_factory: Any,  # Callable, required
+        optimizer_kwargs: dict,
+        scheduler_factory: Any = None,  # Optional callable
+        scheduler_kwargs: dict = None,  # Optional dict
         max_iterations: int = 100,
         convergence_threshold: float = 1e-6,
         timeout_seconds: float = 30.0,
         device: torch.device = None,
         dtype: torch.dtype = torch.float32,
+        # Stream configuration parameters
+        request_stream_name: str = "geometry_requests",
+        response_stream_name: str = "geometry_requests_responses",
+        consumer_group: str = "minimizer_consumer",
+        consumer_name: str = None,
     ):
         """
         Initialize the geometry minimizer.
@@ -73,29 +79,33 @@ class GeometryMinimizer(nn.Module):
         Args:
             redis_manager: Redis manager for bundle operations
             macromolecule_bundle_id: ID of the macromolecule bundle to minimize
-            learning_rate: Learning rate for optimization
-            optimizer: Optimization algorithm ("gd" or "adam")
+            optimizer_factory: Callable that returns a PyTorch optimizer, e.g. torch.optim.Adam
+            optimizer_kwargs: Dict of kwargs for the optimizer
+            scheduler_factory: Optional callable that returns a PyTorch scheduler, e.g. torch.optim.lr_scheduler.CosineAnnealingLR
+            scheduler_kwargs: Optional dict of kwargs for the scheduler
             max_iterations: Maximum number of iterations
             convergence_threshold: Gradient norm threshold for convergence
             timeout_seconds: Timeout for geometry calculations
             device: Device for tensors
             dtype: Data type for tensors
+            request_stream_name: Redis stream name for sending requests
+            response_stream_name: Redis stream name for receiving responses
+            consumer_group: Consumer group name for response handling
+            consumer_name: Consumer name (auto-generated if None)
         """
         super().__init__()
-
         self.redis_manager = redis_manager
         self.macromolecule_bundle_id = macromolecule_bundle_id
-        self.learning_rate = learning_rate
-        self.optimizer_name = optimizer
         self.max_iterations = max_iterations
         self.convergence_threshold = convergence_threshold
         self.timeout_seconds = timeout_seconds
         self.device = device if device is not None else torch.device("cpu")
         self.dtype = dtype
-
+        self.request_stream_name = request_stream_name
+        self.response_stream_name = response_stream_name
+        self.consumer_group = consumer_group
+        self.consumer_name = consumer_name or f"minimizer_{uuid.uuid4().hex[:8]}"
         self.logger = logging.getLogger("GeometryMinimizer")
-
-        # Initialize coordinate translator
         self.coordinate_translator = CoordinateTranslator(
             redis_manager=redis_manager,
             coordinate_system="cartesian",
@@ -103,27 +113,23 @@ class GeometryMinimizer(nn.Module):
             dtype=self.dtype,
             device=self.device,
         )
-
-        # Initialize macromolecule processor for coordinate updates
         self.macromolecule_processor = MacromoleculeProcessor(
             redis_manager, "minimizer_processor"
         )
-
-        # Load initial coordinates from macromolecule bundle
         self.initial_coordinates = self._load_coordinates_from_bundle()
         self.current_coordinates = (
             self.initial_coordinates.detach().clone().requires_grad_(True)
         )
-
-        # Initialize optimizer
-        self.optimizer = self._create_optimizer()
-
-        # Tracking
+        self.optimizer = optimizer_factory([self.current_coordinates], **optimizer_kwargs)
+        self.scheduler = None
+        if scheduler_factory is not None:
+            if scheduler_kwargs is None:
+                scheduler_kwargs = {}
+            self.scheduler = scheduler_factory(self.optimizer, **scheduler_kwargs)
         self.iteration_history: List[Dict[str, float]] = []
         self.best_coordinates: Optional[torch.Tensor] = None
         self.best_gradient_norm = float("inf")
-        self.latest_total_energy = None  # Track the most recent total geometry energy
-
+        self.latest_total_energy = None
         self.async_redis_client = redis.Redis(
             host=self.redis_manager.host,
             port=self.redis_manager.port,
@@ -132,7 +138,14 @@ class GeometryMinimizer(nn.Module):
             decode_responses=False,
         )
 
-        self.consumer_name = f"minimizer_{uuid.uuid4().hex[:8]}"
+    def add_scheduler(self, scheduler: Any) -> None:
+        """
+        Attach a PyTorch learning rate scheduler to this minimizer.
+
+        Args:
+            scheduler: A PyTorch scheduler instance (e.g., CosineAnnealingLR)
+        """
+        self.scheduler = scheduler
 
     def _load_coordinates_from_bundle(self) -> torch.Tensor:
         """Load coordinates from the macromolecule bundle."""
@@ -192,15 +205,6 @@ class GeometryMinimizer(nn.Module):
             self.logger.error(f"Failed to load coordinates: {e}")
             raise
 
-    def _create_optimizer(self) -> optim.Optimizer:
-        """Create the optimizer."""
-        if self.optimizer_name.lower() == "adam":
-            return optim.Adam([self.current_coordinates], lr=self.learning_rate)
-        elif self.optimizer_name.lower() == "gd":
-            return optim.SGD([self.current_coordinates], lr=self.learning_rate)
-        else:
-            raise ValueError(f"Unknown optimizer: {self.optimizer_name}")
-
     async def _request_geometry_calculation(
         self, refresh_restraints: bool = False
     ) -> str:
@@ -217,13 +221,12 @@ class GeometryMinimizer(nn.Module):
             )
 
             # Send request to Redis stream
-            stream_name = "geometry_requests"
             message = {
                 "request": json.dumps(dataclasses.asdict(request), default=str),
                 "timestamp": time.time(),
                 "source": "geometry_minimizer",
             }
-            await self.async_redis_client.xadd(stream_name, message)
+            await self.async_redis_client.xadd(self.request_stream_name, message)
             refresh_status = (
                 "with full restraint refresh"
                 if refresh_restraints
@@ -240,13 +243,10 @@ class GeometryMinimizer(nn.Module):
     async def _wait_for_geometry_response(self) -> str:
         """Wait for geometry calculation response."""
         try:
-            response_stream = "geometry_requests_responses"
-            consumer_group = "minimizer_consumer"
-            consumer_name = self.consumer_name
             # Create consumer group if it doesn't exist
             try:
                 await self.async_redis_client.xgroup_create(
-                    response_stream, consumer_group, mkstream=True
+                    self.response_stream_name, self.consumer_group, mkstream=True
                 )
             except Exception:
                 # Group already exists
@@ -257,9 +257,9 @@ class GeometryMinimizer(nn.Module):
                 try:
                     # Read messages from the stream
                     messages = await self.async_redis_client.xreadgroup(
-                        consumer_group,
-                        consumer_name,
-                        {response_stream: ">"},
+                        self.consumer_group,
+                        self.consumer_name,
+                        {self.response_stream_name: ">"},
                         count=1,
                         block=1000,
                     )
@@ -275,7 +275,7 @@ class GeometryMinimizer(nn.Module):
                                 if bundle_id:
                                     # Acknowledge message
                                     await self.async_redis_client.xack(
-                                        response_stream, consumer_group, message_id
+                                        self.response_stream_name, self.consumer_group, message_id
                                     )
                                     self.logger.info(
                                         f"Received geometry response: {bundle_id}"
@@ -412,7 +412,7 @@ class GeometryMinimizer(nn.Module):
             "dialect": "numpy",
         }
 
-        stream_name = "geometry_requests"
+        stream_name = self.request_stream_name
         message = {
             "coordinate_update": json.dumps(coordinate_update_message, default=str),
             "timestamp": time.time(),
@@ -471,6 +471,8 @@ class GeometryMinimizer(nn.Module):
                     self.logger.info(f"Converged at iteration {iteration}")
                     break
                 await self.backward(gradients, step=iteration)
+                if self.scheduler is not None:
+                    self.scheduler.step()  # <-- Step the scheduler
                 await asyncio.sleep(0.1)
             except Exception as e:
                 self.logger.error(f"Error in iteration {iteration}: {e}")

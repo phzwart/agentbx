@@ -10,10 +10,20 @@ from agentbx.core.processors.geometry_processor import CctbxGeometryProcessor
 from agentbx.core.processors.macromolecule_processor import MacromoleculeProcessor
 from agentbx.core.redis_manager import RedisManager
 from agentbx.utils.structures.coordinate_shaker import shake_coordinates_in_bundle
+import torch
+import torch.optim.lr_scheduler as lr_scheduler
 
 
 # Configure logging for demonstration
 logging.basicConfig(level=logging.INFO)
+
+# Stream configuration - centralized configuration for all components
+STREAM_CONFIG = {
+    "request_stream_name": "geometry_requests",
+    "response_stream_name": "geometry_requests_responses", 
+    "agent_consumer_group": "geometry_agents",
+    "minimizer_consumer_group": "minimizer_consumer",
+}
 
 # 0. Open a Redis session
 redis_config = RedisConfig.from_env()
@@ -38,8 +48,8 @@ async def main():
     agent = AsyncGeometryAgent(
         agent_id="test_agent",
         redis_manager=redis_manager,
-        stream_name="geometry_requests",
-        consumer_group="geometry_agents",
+        stream_name=STREAM_CONFIG["request_stream_name"],
+        consumer_group=STREAM_CONFIG["agent_consumer_group"],
     )
 
     await agent.initialize()
@@ -70,16 +80,24 @@ async def main():
         )
         shaken_bundle_id = redis_manager.store_bundle(shaken_bundle)
 
-        # 4. Start a geometry minimizer client
+        # Construct optimizer and scheduler first
         minimizer = GeometryMinimizer(
             redis_manager=redis_manager,
             macromolecule_bundle_id=shaken_bundle_id,
-            learning_rate=0.1,
-            optimizer="adam",
-            max_iterations=1000,
+            optimizer_factory=torch.optim.Adam,
+            optimizer_kwargs={"lr": 0.1},
+            scheduler_factory=torch.optim.lr_scheduler.CosineAnnealingLR,
+            scheduler_kwargs={"T_max": 1000, "eta_min": 0.0},
+            max_iterations=10,
             convergence_threshold=1e-6,
             timeout_seconds=3.0,
+            # Stream configuration - no more magic constants!
+            request_stream_name=STREAM_CONFIG["request_stream_name"],
+            response_stream_name=STREAM_CONFIG["response_stream_name"],
+            consumer_group=STREAM_CONFIG["minimizer_consumer_group"],
+            consumer_name=None,  # Auto-generated
         )
+
 
         # 5. Run the geometry minimization loop
         results = await minimizer.minimize(refresh_restraints=False)
