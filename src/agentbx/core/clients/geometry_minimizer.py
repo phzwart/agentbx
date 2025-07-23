@@ -17,21 +17,22 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
-from typing import Union
 
 import torch
 import torch.nn as nn
-import torch.optim as optim
-from cctbx.array_family import flex
 
 from agentbx.core.clients.coordinate_translator import CoordinateTranslator
 from agentbx.core.processors.macromolecule_processor import MacromoleculeProcessor
 from agentbx.core.redis_manager import RedisManager
 
 
+# fmt: off
+from cctbx.array_family import flex  # noqa: F401  # Needed for unpickling cctbx objects from Redis  # isort: skip
+# fmt: on
+
+
 if TYPE_CHECKING:
-    from agentbx.core.agents.async_geometry_agent import AsyncGeometryAgent
+    pass
 
 import json
 
@@ -39,7 +40,6 @@ import numpy as np
 import redis.asyncio as redis
 
 from agentbx.core.clients.array_translator import ArrayTranslator
-from agentbx.schemas.generated import CoordinateUpdateBundle
 
 
 class GeometryMinimizer(nn.Module):
@@ -120,7 +120,9 @@ class GeometryMinimizer(nn.Module):
         self.current_coordinates = (
             self.initial_coordinates.detach().clone().requires_grad_(True)
         )
-        self.optimizer = optimizer_factory([self.current_coordinates], **optimizer_kwargs)
+        self.optimizer = optimizer_factory(
+            [self.current_coordinates], **optimizer_kwargs
+        )
         self.scheduler = None
         if scheduler_factory is not None:
             if scheduler_kwargs is None:
@@ -275,7 +277,9 @@ class GeometryMinimizer(nn.Module):
                                 if bundle_id:
                                     # Acknowledge message
                                     await self.async_redis_client.xack(
-                                        self.response_stream_name, self.consumer_group, message_id
+                                        self.response_stream_name,
+                                        self.consumer_group,
+                                        message_id,
                                     )
                                     self.logger.info(
                                         f"Received geometry response: {bundle_id}"
@@ -318,11 +322,16 @@ class GeometryMinimizer(nn.Module):
 
     async def forward(self, refresh_restraints: bool = False) -> (torch.Tensor, str):
         """
-        Forward pass: calculate geometry gradients.
+        Forward pass: request geometry calculation and return gradients.
+
         Args:
-            refresh_restraints: If True, rebuild restraints from current model state
+            refresh_restraints: If True, rebuild restraints on each iteration
+
         Returns:
-            Gradient tensor, geometry gradient bundle ID
+            Tuple of (gradient tensor, geometry gradient bundle ID)
+
+        Raises:
+            ValueError: If the gradient bundle dialect is not supported.
         """
         # Request geometry calculation, get result bundle key
         result_bundle_key = await self._request_geometry_calculation(
@@ -368,9 +377,11 @@ class GeometryMinimizer(nn.Module):
     async def backward(self, gradients: torch.Tensor, step: int = 0) -> None:
         """
         Backward pass: update coordinates using gradients and send coordinate update bundle to Redis.
+
         Args:
             gradients: Gradient tensor
             step: Current optimization step
+
         """
         # Zero gradients
         self.optimizer.zero_grad()
@@ -422,11 +433,13 @@ class GeometryMinimizer(nn.Module):
 
     async def minimize(self, refresh_restraints: bool = False) -> Dict[str, Any]:
         """
-        Run the minimization loop.
+        Minimize the geometry of the macromolecule bundle.
+
         Args:
             refresh_restraints: If True, rebuild restraints on each iteration
+
         Returns:
-            Dictionary with minimization results
+            Dictionary containing minimization results
         """
         self.logger.info(
             f"Starting geometry minimization with {self.max_iterations} max iterations"

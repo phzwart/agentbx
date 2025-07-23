@@ -60,7 +60,7 @@
 
 2. **Key Features:**
    - `load_macromolecule(pdb_file)` → returns bundle ID
-   - `load_experimental_data(mtz_file)` → returns bundle ID  
+   - `load_experimental_data(mtz_file)` → returns bundle ID
    - `load_both_data(pdb_file, mtz_file)` → returns (macro_id, exp_id)
    - `validate_data_compatibility(macro_id, exp_id)` → validation results
    - `get_bundle_info(bundle_id)` → comprehensive bundle information
@@ -86,7 +86,7 @@
    ```bash
    # Download test data
    python examples/download_pdb_data.py 1ubq
-   
+
    # Test the new data loading infrastructure
    python examples/data_loading_example.py
    ```
@@ -108,4 +108,4 @@
 - Confirm that data loading → agent → client workflow is robust
 - Document any issues or improvements needed
 
---- 
+---

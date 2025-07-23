@@ -16,6 +16,7 @@ from typing import Dict
 from typing import List
 
 from agentbx.core.bundle_base import Bundle
+from agentbx.schemas.generated import ExperimentalDataBundle
 
 from .base import SinglePurposeProcessor
 
@@ -76,6 +77,16 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         target_prefs = self._determine_target_preferences(f_obs, sigmas, metadata)
         exp_bundle.add_asset("target_preferences", target_prefs)
 
+        # Validate with schema
+        ExperimentalDataBundle(
+            f_obs=f_obs,
+            miller_indices=f_obs.indices(),
+            sigmas=sigmas,
+            r_free_flags=r_free_flags,
+            experimental_metadata=metadata,
+            target_preferences=target_prefs,
+        )
+        print("[Schema Validation] ExperimentalDataBundle validation successful.")
         return {"experimental_data": exp_bundle}
 
     def _process_reflection_file(

@@ -24,12 +24,14 @@ Redis Storage ← Bundle System ← Async Processing ← CCTBX Geometry
 ## Features
 
 ### 🚀 Async Processing
+
 - Non-blocking geometry calculations
 - Redis streams for reliable messaging
 - Consumer groups for load balancing
 - Automatic retry logic with exponential backoff
 
 ### 🔒 Security & Permissions
+
 - Agent registration and validation
 - Permission-based access control
 - Module import whitelisting
@@ -37,12 +39,14 @@ Redis Storage ← Bundle System ← Async Processing ← CCTBX Geometry
 - Violation detection and reporting
 
 ### 🔧 Coordinate Translation
+
 - Seamless CCTBX ↔ PyTorch conversion
 - Automatic gradient registration
 - Redis bundle integration
 - Memory-efficient operations
 
 ### 📊 Monitoring & Metrics
+
 - Real-time performance metrics
 - Health check monitoring
 - Stream processing statistics
@@ -109,7 +113,7 @@ async def start_agent():
         stream_name="geometry_requests",
         consumer_group="geometry_agents"
     )
-    
+
     # Initialize and start
     await agent.initialize()
     await agent.start()
@@ -127,7 +131,7 @@ import redis.asyncio as redis
 async def send_request():
     # Create Redis client
     redis_client = redis.Redis(decode_responses=True)
-    
+
     # Create request
     request = GeometryRequest(
         request_id="req_123",
@@ -135,7 +139,7 @@ async def send_request():
         priority=1,
         timeout_seconds=300
     )
-    
+
     # Send to stream
     await redis_client.xadd(
         "geometry_requests",
@@ -225,7 +229,7 @@ registration = AgentRegistration(
     version="1.0.0",
     permissions=[
         "geometry_calculation",
-        "bundle_read", 
+        "bundle_read",
         "bundle_write",
         "coordinate_update"
     ]
@@ -331,16 +335,16 @@ from agentbx.core.async_geometry_agent import AsyncGeometryAgent
 
 def create_geometry_workflow():
     workflow = StateGraph()
-    
+
     # Add nodes
     workflow.add_node("create_bundle", create_macromolecule_bundle)
     workflow.add_node("calculate_geometry", send_geometry_request)
     workflow.add_node("process_results", process_geometry_results)
-    
+
     # Add edges
     workflow.add_edge("create_bundle", "calculate_geometry")
     workflow.add_edge("calculate_geometry", "process_results")
-    
+
     return workflow.compile()
 ```
 
@@ -445,10 +449,10 @@ retry_policy = RetryPolicy(
 async def handle_failed_message(message, error):
     # Log error
     logger.error(f"Message {message.message_id} failed: {error}")
-    
+
     # Send to dead letter queue
     await send_to_dead_letter_queue(message, error)
-    
+
     # Notify monitoring system
     await notify_monitoring_system(message, error)
 ```
@@ -477,13 +481,13 @@ print(f"GPU memory: {memory_info['cuda_memory_allocated']} bytes")
 async def process_batch(requests):
     # Group similar requests
     grouped_requests = group_requests_by_type(requests)
-    
+
     # Process each group
     results = []
     for group in grouped_requests:
         result = await process_group(group)
         results.extend(result)
-    
+
     return results
 ```
 
@@ -593,4 +597,4 @@ class RedisStreamManager:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.

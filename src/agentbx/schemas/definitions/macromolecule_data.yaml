@@ -42,13 +42,15 @@ asset_definitions:
   xray_structure:
     description: "X-ray structure derived from PDB hierarchy"
     data_type: "cctbx.xray.structure"
-    required_attributes: ["scatterers", "unit_cell", "space_group", "sites_cart"]
+    required_attributes:
+      ["scatterers", "unit_cell", "space_group", "sites_cart"]
     depends_on: [pdb_hierarchy]
 
   macromolecule_metadata:
     description: "Macromolecule provenance and quality info"
     data_type: "dict"
-    expected_keys: ["source_file", "n_atoms", "n_chains", "n_residues", "resolution"]
+    expected_keys:
+      ["source_file", "n_atoms", "n_chains", "n_residues", "resolution"]
 
 validation_rules:
   pdb_hierarchy:
@@ -100,4 +102,4 @@ produces_for:
   - xray_atomic_model_data # For structure factor calculations
   - geometry_gradient_data # For geometry restraint gradients
   - optimization_data # For coordinate optimization
-  - validation_data # For model validation 
+  - validation_data # For model validation

@@ -18,6 +18,7 @@ from typing import Dict
 from typing import List
 
 from agentbx.core.bundle_base import Bundle
+from agentbx.schemas.generated import StructureFactorDataBundle
 
 from .base import SinglePurposeProcessor
 
@@ -73,6 +74,17 @@ class StructureFactorProcessor(SinglePurposeProcessor):
         # Add metadata
         sf_bundle.add_metadata("calculation_type", "direct_summation")
         sf_bundle.add_metadata("bulk_solvent_applied", f_model is not None)
+
+        # Validate with schema
+        StructureFactorDataBundle(
+            f_calc=f_calc,
+            f_model=f_model,
+            sf_gradients_wrt_params=sf_gradients_wrt_params,
+            miller_indices=model_data.get_asset("miller_indices"),
+            scale_factors=None,
+            computation_info=None,
+        )
+        print("[Schema Validation] StructureFactorDataBundle validation successful.")
 
         return {"structure_factor_data": sf_bundle}
 

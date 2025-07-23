@@ -14,7 +14,6 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 from typing import Dict
-from typing import List
 from typing import Optional
 
 import numpy as np
@@ -22,14 +21,17 @@ import redis.asyncio as redis
 from pydantic import BaseModel
 from pydantic import Field
 
-from agentbx.core.bundle_base import Bundle
 from agentbx.core.clients.array_translator import ArrayTranslator
 from agentbx.core.processors.geometry_processor import CctbxGeometryProcessor
 from agentbx.core.redis_manager import RedisManager
 from agentbx.schemas.generated import AgentConfigurationBundle
 from agentbx.schemas.generated import AgentSecurityBundle
-from agentbx.schemas.generated import CoordinateUpdateBundle
 from agentbx.schemas.generated import RedisStreamsBundle
+
+
+# fmt: off
+from cctbx.array_family import flex  # noqa: F401  # Needed for unpickling cctbx objects from Redis  # isort: skip
+# fmt: on
 
 
 @dataclass
@@ -46,6 +48,7 @@ class GeometryRequest:
     created_at: datetime = None
 
     def __post_init__(self):
+        """Post-initialization hook."""
         if self.created_at is None:
             self.created_at = datetime.now()
 
@@ -62,6 +65,8 @@ class GeometryResponse(BaseModel):
 
 
 class GradientResultBundle(BaseModel):
+    """Bundle for gradient result."""
+
     bundle_type: str = "gradient"
     gradient_key: str
     shape: list
@@ -476,8 +481,8 @@ class AsyncGeometryAgent:
                 model_manager = self._model_manager_cache[parent_bundle_id]
 
                 # Convert coordinates from list to CCTBX flex format
-                import numpy as np
-                from cctbx.array_family import flex
+                # import numpy as np
+                # from cctbx.array_family import flex
 
                 # Convert list to numpy array
                 coords_numpy = np.array(coordinate_update_bundle.coordinates)

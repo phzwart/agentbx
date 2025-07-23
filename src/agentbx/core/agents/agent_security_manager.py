@@ -5,25 +5,19 @@ This module provides comprehensive security management for async agents,
 including permission validation, module whitelisting, and security audits.
 """
 
-import importlib
 import logging
-import os
-import sys
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Set
-from typing import Tuple
 
 from pydantic import BaseModel
 from pydantic import Field
 from pydantic import field_validator
 
 from agentbx.core.redis_manager import RedisManager
-from agentbx.schemas.generated import AgentConfigurationBundle
 from agentbx.schemas.generated import AgentSecurityBundle
 
 

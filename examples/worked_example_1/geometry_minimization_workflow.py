@@ -1,17 +1,15 @@
 import asyncio
 import logging
 import os
-import time
+
+import torch
 
 from agentbx.core.agents.async_geometry_agent import AsyncGeometryAgent
 from agentbx.core.clients.geometry_minimizer import GeometryMinimizer
 from agentbx.core.config import RedisConfig
-from agentbx.core.processors.geometry_processor import CctbxGeometryProcessor
 from agentbx.core.processors.macromolecule_processor import MacromoleculeProcessor
 from agentbx.core.redis_manager import RedisManager
 from agentbx.utils.structures.coordinate_shaker import shake_coordinates_in_bundle
-import torch
-import torch.optim.lr_scheduler as lr_scheduler
 
 
 # Configure logging for demonstration
@@ -20,7 +18,7 @@ logging.basicConfig(level=logging.INFO)
 # Stream configuration - centralized configuration for all components
 STREAM_CONFIG = {
     "request_stream_name": "geometry_requests",
-    "response_stream_name": "geometry_requests_responses", 
+    "response_stream_name": "geometry_requests_responses",
     "agent_consumer_group": "geometry_agents",
     "minimizer_consumer_group": "minimizer_consumer",
 }
@@ -56,7 +54,7 @@ async def main():
     print("   ✅ Agent initialized")
 
     # Start the agent in the background
-    agent_task = asyncio.create_task(agent.start())
+    asyncio.create_task(agent.start())
     print("   ✅ Agent started")
 
     # Give the agent a moment to start up
@@ -97,7 +95,6 @@ async def main():
             consumer_group=STREAM_CONFIG["minimizer_consumer_group"],
             consumer_name=None,  # Auto-generated
         )
-
 
         # 5. Run the geometry minimization loop
         results = await minimizer.minimize(refresh_restraints=False)

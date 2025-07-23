@@ -16,6 +16,7 @@ from typing import Dict
 from typing import List
 
 from agentbx.core.bundle_base import Bundle
+from agentbx.schemas.generated import TargetDataBundle
 
 from .base import SinglePurposeProcessor
 
@@ -79,6 +80,16 @@ class TargetProcessor(SinglePurposeProcessor):
             target_bundle.add_asset(
                 "target_gradients_wrt_sf", result["target_gradients_wrt_sf"]
             )
+
+        # Validate with schema
+        TargetDataBundle(
+            target_value=result["target_value"],
+            target_type=target_type,
+            r_factors=result["r_factors"],
+            likelihood_parameters=result.get("likelihood_parameters"),
+            target_gradients_wrt_sf=result.get("target_gradients_wrt_sf"),
+        )
+        print("[Schema Validation] TargetDataBundle validation successful.")
 
         return {"target_data": target_bundle}
 

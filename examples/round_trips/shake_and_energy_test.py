@@ -11,13 +11,7 @@ This script tests the complete workflow:
 
 import logging
 import os
-import random
 import sys
-from pathlib import Path
-
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from agentbx.core.processors.macromolecule_processor import MacromoleculeProcessor
 from agentbx.core.redis_manager import RedisManager
@@ -73,10 +67,8 @@ def compute_total_energy(restraint_manager, model_manager):
 
 
 def refresh_restraint_manager(model_manager):
-    """
-    Rebuild the restraint manager from the current model manager state.
-    Returns the new restraint manager.
-    """
+    """Refresh the restraint manager for round trip test."""
+
     model_manager.process(make_restraints=True)
     return model_manager.get_restraints_manager()
 

@@ -5,14 +5,12 @@ Simple test to check model_manager serialization issue.
 
 import os
 import sys
-from pathlib import Path
-
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from agentbx.core.processors.macromolecule_processor import MacromoleculeProcessor
 from agentbx.core.redis_manager import RedisManager
+
+
+# Add src to path for imports
 
 
 def test_model_manager_serialization():

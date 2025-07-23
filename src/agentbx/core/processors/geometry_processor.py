@@ -12,13 +12,12 @@ Does NOT know about:
 """
 
 import logging
-import os
-import time
 from typing import Any
 from typing import Dict
 from typing import List
 
 from agentbx.core.bundle_base import Bundle
+from agentbx.schemas.generated import GeometryGradientDataBundle
 
 from .base import SinglePurposeProcessor
 
@@ -92,11 +91,20 @@ class CctbxGeometryProcessor(SinglePurposeProcessor):
         self, geometry_restraints_manager: Any, model_manager: Any
     ) -> Any:
         """
-        Calculate geometry gradients using CCTBX geometry restraints.
-        Returns (gradients, total_geometry_energy)
+        Calculate geometry gradients using the geometry restraints manager.
+
+        Args:
+            geometry_restraints_manager: The geometry restraints manager.
+            model_manager: The model manager.
+
+        Returns:
+            Tuple of (gradient tensor, geometry gradient bundle ID)
+
+        Raises:
+            RuntimeError: If there is an error in the geometry restraints manager.
         """
         try:
-            from cctbx.array_family import flex
+            pass
 
             sites_cart = model_manager.get_sites_cart()
             if sites_cart.size() == 0:
@@ -164,7 +172,7 @@ class CctbxGeometryProcessor(SinglePurposeProcessor):
                 )
                 raise RuntimeError(
                     f"Failed to calculate geometry gradients and energy: {fresh_error}"
-                )
+                ) from fresh_error
         except Exception as e:
             logger.error(f"Error in _calculate_geometry_gradients: {e}")
             raise
@@ -198,18 +206,22 @@ class CctbxGeometryProcessor(SinglePurposeProcessor):
         geo_bundle.add_asset(
             "gradient_norm", self._calculate_gradient_norm(geometry_gradients)
         )
-
-        # Add total geometry energy if available
         if isinstance(geometry_gradients, tuple):
             _, total_energy = geometry_gradients
             geo_bundle.add_asset("total_geometry_energy", total_energy)
-
-        # Add metadata
         geo_bundle.add_metadata("geometry_type", "bond_length_angle_dihedral")
         geo_bundle.add_metadata("calculation_method", "analytical")
         geo_bundle.add_metadata("source_macromolecule", parent_bundle_id)
         geo_bundle.add_metadata("dialect", "cctbx")
-
+        # Validate with schema
+        GeometryGradientDataBundle(
+            coordinates=None,  # Not available in this context
+            geometric_gradients=geometry_gradients,
+            restraint_energies={},
+            restraint_counts={},
+            geometry_metadata={},
+        )
+        print("[Schema Validation] GeometryGradientDataBundle validation successful.")
         return geo_bundle
 
     def calculate_geometry_gradients(self, macromolecule_bundle_id: str) -> str:

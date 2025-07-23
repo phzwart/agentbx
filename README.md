@@ -34,10 +34,12 @@ Agentbx is a Python-based system for managing crystallographic & electron micros
   - Stateless, single-responsibility modules for core scientific calculations (e.g., geometry, gradients, structure factors).
 
 ### Redis as the Central Nervous System
+
 - **Bundles**: All data (atomic models, gradients, results) are stored as versioned bundles in Redis.
 - **Streams**: Agents and clients communicate via Redis streams for robust, asynchronous, and distributed operation.
 
 ### No Internal Workflow Engine
+
 - **Workflow orchestration is now externalized**: Instead of internal workflow management, users are encouraged to use modern orchestration tools like [Prefect](https://www.prefect.io/) or [LangGraph](https://langchain-ai.github.io/langgraph/) to coordinate multi-step pipelines and distributed jobs.
 - Agentbx provides the building blocks (agents, clients, processors, bundles) for these workflows, but does not enforce or manage workflow logic internally.
 
@@ -68,10 +70,12 @@ src/agentbx/
    - All communication and data flow through Redis, enabling robust, distributed, and restartable computation.
 
 ## Integration with AI and External Orchestration
+
 - **AI Models**: Easily integrate PyTorch/TensorFlow models as clients or processors.
 - **Orchestration**: Use Prefect, LangGraph, or similar tools to build complex, multi-step scientific workflows using Agentbx as the computational backend.
 
 ## Features
+
 - **Modular, single-responsibility agents and clients**
 - **Persistent, versioned data bundles in Redis**
 - **Stateless, testable processors for core scientific logic**
@@ -80,6 +84,7 @@ src/agentbx/
 - **Robust multi-process/multi-shell operation**
 
 ## Requirements
+
 - **Python 3.10+**
 - **Redis**
 - **CCTBX**

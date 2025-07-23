@@ -22,7 +22,6 @@ from typing import List
 from typing import Literal
 from typing import Optional
 from typing import Tuple
-from typing import Union
 
 import numpy as np
 import torch
@@ -102,11 +101,13 @@ class ArrayTranslator:
             array: Input array (any supported type)
             target_dialect: Target dialect ("cctbx", "numpy", "torch")
             target_shape: Optional target shape for reshaping
-            **kwargs: Additional conversion parameters
+            **kwargs: Additional conversion parameters # noqa: RST210
 
         Returns:
             Converted array in target dialect
+
         """
+
         # Detect source dialect
         source_dialect = self._detect_dialect(array)
 
@@ -141,12 +142,15 @@ class ArrayTranslator:
         Pack array for bundle storage.
 
         Args:
-            array: Array to pack
-            dialect: Array dialect
-            storage_format: Storage format ("bytes" or "list")
+            array: Input array (any supported type)
+            dialect: Target dialect ("cctbx", "numpy", "torch")
+            storage_format: Storage format ("bytes", "list")
 
         Returns:
             Tuple of (packed_data, metadata)
+
+        Raises:
+            ValueError: If the dialect is not supported.
         """
         if dialect == "cctbx":
             # For CCTBX, we typically pickle or store as-is
@@ -192,6 +196,9 @@ class ArrayTranslator:
 
         Returns:
             Unpacked array
+
+        Raises:
+            ValueError: If the dialect is not supported.
         """
         dialect = metadata.get("dialect")
 

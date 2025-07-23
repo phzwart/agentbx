@@ -7,18 +7,16 @@ and getting bundle IDs back from Redis.
 
 import logging
 import os
-from pathlib import Path
 from typing import Any
 from typing import Dict
-from typing import Optional
 from typing import Tuple
-from typing import Union
 
 from agentbx.core.processors.experimental_data_processor import (
     ExperimentalDataProcessor,
 )
 from agentbx.core.processors.macromolecule_processor import MacromoleculeProcessor
 from agentbx.core.redis_manager import RedisManager
+from agentbx.schemas.generated import MacromoleculeDataBundle
 from agentbx.utils.io.crystallographic_utils import CrystallographicFileHandler
 
 
@@ -75,6 +73,16 @@ class DataLoader:
 
             # Validate the bundle was created
             bundle = self.redis_manager.get_bundle(bundle_id)
+            # Validate with schema
+            MacromoleculeDataBundle(
+                pdb_hierarchy=bundle.get_asset("pdb_hierarchy"),
+                crystal_symmetry=bundle.get_asset("crystal_symmetry"),
+                model_manager=bundle.get_asset("model_manager"),
+                restraint_manager=bundle.get_asset("restraint_manager"),
+                xray_structure=bundle.get_asset("xray_structure"),
+                macromolecule_metadata=bundle.metadata,
+            )
+            print("[Schema Validation] MacromoleculeDataBundle validation successful.")
             logger.info(f"Created macromolecule bundle: {bundle_id}")
             logger.info(f"Bundle contains {len(bundle.assets)} assets")
 
@@ -190,11 +198,8 @@ class DataLoader:
         Returns:
             Tuple of (macromolecule_bundle_id, experimental_bundle_id)
 
-        Raises:
-            FileNotFoundError: If either file doesn't exist
-            ValueError: If files cannot be read or processed
         """
-        logger.info(f"Loading both macromolecule and experimental data")
+        logger.info("Loading both macromolecule and experimental data")
         logger.info(f"PDB: {pdb_file}")
         logger.info(f"MTZ: {mtz_file}")
 
@@ -206,7 +211,7 @@ class DataLoader:
             mtz_file, f_obs_label, sigma_label, r_free_label
         )
 
-        logger.info(f"Successfully loaded both datasets:")
+        logger.info("Successfully loaded both datasets:")
         logger.info(f"  Macromolecule bundle: {macro_bundle_id}")
         logger.info(f"  Experimental bundle: {exp_bundle_id}")
 

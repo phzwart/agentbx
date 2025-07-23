@@ -11,14 +11,15 @@ from datetime import datetime
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Optional
 from typing import Tuple
 from typing import Union
 
 import numpy as np
 import torch
 import torch.nn as nn
-from cctbx.array_family import flex
+from cctbx.array_family import (  # noqa: F401  # Needed for unpickling cctbx objects from Redis
+    flex,
+)
 
 from agentbx.core.bundle_base import Bundle
 from agentbx.core.clients.array_translator import ArrayTranslator
@@ -95,6 +96,9 @@ class CoordinateTranslator(nn.Module):
 
         Returns:
             PyTorch tensor with gradients if requires_grad=True
+
+        Raises:
+            ValueError: If the input type is not supported.
         """
         if self._is_cctbx_array(input_data):
             return self.cctbx_to_torch(input_data)
@@ -147,6 +151,9 @@ class CoordinateTranslator(nn.Module):
 
         Returns:
             CCTBX flex array
+
+        Raises:
+            ValueError: If the input is not a PyTorch tensor.
         """
         if not isinstance(tensor, torch.Tensor):
             raise ValueError(f"Expected PyTorch tensor, got {type(tensor)}")
@@ -196,6 +203,9 @@ class CoordinateTranslator(nn.Module):
 
         Returns:
             PyTorch tensor
+
+        Raises:
+            ValueError: If the bundle type is not "coordinate_data".
         """
         bundle = self.redis_manager.get_bundle(bundle_id)
 

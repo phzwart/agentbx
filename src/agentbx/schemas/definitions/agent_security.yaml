@@ -24,9 +24,9 @@ asset_definitions:
   permissions:
     description: "List of granted permissions for the agent"
     data_type: "list"
-    allowed_values: 
+    allowed_values:
       - "geometry_calculation"
-      - "structure_factor_calculation" 
+      - "structure_factor_calculation"
       - "target_calculation"
       - "gradient_calculation"
       - "bundle_read"

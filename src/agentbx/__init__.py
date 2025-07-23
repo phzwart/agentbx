@@ -6,6 +6,7 @@ from .core.config import RedisConfig
 from .core.redis_manager import RedisManager
 from .utils.cli import main
 
+
 __version__ = "0.1.0"
 
 __all__ = [

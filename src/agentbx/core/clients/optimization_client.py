@@ -10,29 +10,31 @@ import logging
 import time
 from abc import ABC
 from abc import abstractmethod
+
+# Import for type hints only
 from typing import TYPE_CHECKING
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import Tuple
-from typing import Union
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from cctbx.array_family import flex
 
-from agentbx.core.agents.async_geometry_agent import AsyncGeometryAgent
-from agentbx.core.agents.async_geometry_agent import GeometryRequest
+from agentbx.core.processors.macromolecule_processor import MacromoleculeProcessor
 from agentbx.core.redis_manager import RedisManager
 
 from .coordinate_translator import CoordinateTranslator
 
 
+# fmt: off
+from cctbx.array_family import flex  # noqa: F401  # Needed for unpickling cctbx objects from Redis  # isort: skip
+# fmt: on
+
+
 if TYPE_CHECKING:
-    from agentbx.core.agents.async_geometry_agent import AsyncGeometryAgent
-    from agentbx.core.agents.async_geometry_agent import GeometryRequest
+    pass
 
 
 class OptimizationClient(ABC, nn.Module):
@@ -121,17 +123,14 @@ class OptimizationClient(ABC, nn.Module):
     @abstractmethod
     def _load_parameters_from_bundle(self) -> torch.Tensor:
         """Load parameters from the macromolecule bundle. Must be implemented by subclasses."""
-        pass
 
     @abstractmethod
     def _update_parameters_in_bundle(self, new_parameters: torch.Tensor) -> str:
         """Update parameters in the macromolecule bundle. Must be implemented by subclasses."""
-        pass
 
     @abstractmethod
     def _get_parameter_description(self) -> str:
         """Get description of the parameter being optimized. Must be implemented by subclasses."""
-        pass
 
     def _create_optimizer(self) -> optim.Optimizer:
         """Create the optimizer."""

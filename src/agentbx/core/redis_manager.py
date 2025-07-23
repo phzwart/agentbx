@@ -3,7 +3,6 @@ Redis manager for agentbx - handles connections, serialization, and caching.
 """
 
 import hashlib
-import json
 import logging
 import pickle  # nosec - Used only for internal trusted data
 from datetime import datetime
@@ -442,7 +441,6 @@ class RedisManager:
 
         Raises:
             ConnectionError: If Redis connection is not healthy.
-            KeyError: If bundle is not found in Redis.
         """
         if not self.is_healthy():
             raise ConnectionError("Redis connection is not healthy")

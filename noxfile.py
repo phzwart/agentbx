@@ -199,7 +199,6 @@ def install_poetry_export_plugin(session: Session) -> None:
         # The nox-poetry package will handle the export functionality
         print(f"Warning: Could not install poetry-plugin-export: {e}")
         print("Continuing without poetry-plugin-export...")
-        pass
 
 
 def is_python_executable_valid(python_executable: str) -> bool:  # nosec

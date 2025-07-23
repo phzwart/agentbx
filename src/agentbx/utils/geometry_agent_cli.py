@@ -8,7 +8,6 @@ This module provides command-line interface for:
 - Managing agent security and permissions
 """
 
-import argparse
 import asyncio
 import json
 import logging
@@ -16,10 +15,6 @@ import signal
 import sys
 import time
 from datetime import datetime
-from typing import Any
-from typing import Dict
-from typing import List
-from typing import Optional
 
 import click
 import redis.asyncio as redis
@@ -30,9 +25,6 @@ from agentbx.core.agents.async_geometry_agent import AsyncGeometryAgent
 from agentbx.core.agents.async_geometry_agent import GeometryRequest
 from agentbx.core.agents.async_geometry_agent import GeometryResponse
 from agentbx.core.redis_manager import RedisManager
-from agentbx.core.redis_stream_manager import MessageHandler
-from agentbx.core.redis_stream_manager import RedisStreamManager
-from agentbx.core.redis_stream_manager import RetryPolicy
 
 
 @click.group()
@@ -43,7 +35,7 @@ from agentbx.core.redis_stream_manager import RetryPolicy
 @click.option("--verbose", "-v", is_flag=True, help="Verbose logging")
 @click.pass_context
 def cli(ctx, redis_host, redis_port, redis_db, redis_password, verbose):
-    """AgentBX Geometry Agent CLI"""
+    """Agentbx Geometry Agent CLI"""
     # Setup logging
     log_level = logging.DEBUG if verbose else logging.INFO
     logging.basicConfig(
@@ -137,7 +129,7 @@ def send_request(
     ctx, agent_id, macromolecule_bundle_id, priority, timeout, stream_name
 ):
     """Send a geometry calculation request"""
-    redis_manager = ctx.obj["redis_manager"]
+    ctx.obj["redis_manager"]
     redis_host = ctx.obj["redis_host"]
     redis_port = ctx.obj["redis_port"]
     redis_db = ctx.obj["redis_db"]
@@ -193,7 +185,7 @@ def send_request(
 
                         if response.request_id == request.request_id:
                             if response.success:
-                                click.echo(f"✅ Geometry calculation completed!")
+                                click.echo("✅ Geometry calculation completed!")
                                 click.echo(
                                     f"   Bundle ID: {response.geometry_bundle_id}"
                                 )
@@ -201,7 +193,7 @@ def send_request(
                                     f"   Processing time: {response.processing_time:.2f}s"
                                 )
                             else:
-                                click.echo(f"❌ Geometry calculation failed!")
+                                click.echo("❌ Geometry calculation failed!")
                                 click.echo(f"   Error: {response.error_message}")
                                 click.echo(
                                     f"   Processing time: {response.processing_time:.2f}s"
@@ -220,7 +212,7 @@ def send_request(
 @click.pass_context
 def status(ctx, agent_id):
     """Check agent status and health"""
-    redis_manager = ctx.obj["redis_manager"]
+    ctx.obj["redis_manager"]
     redis_host = ctx.obj["redis_host"]
     redis_port = ctx.obj["redis_port"]
     redis_db = ctx.obj["redis_db"]
@@ -381,7 +373,7 @@ def security_report(ctx, agent_id):
 @click.pass_context
 def stream_info(ctx, stream_name, consumer_group):
     """Get stream information and metrics"""
-    redis_manager = ctx.obj["redis_manager"]
+    ctx.obj["redis_manager"]
     redis_host = ctx.obj["redis_host"]
     redis_port = ctx.obj["redis_port"]
     redis_db = ctx.obj["redis_db"]
@@ -409,7 +401,7 @@ def stream_info(ctx, stream_name, consumer_group):
 
             # Get consumer group info
             groups = await redis_client.xinfo_groups(stream_name)
-            click.echo(f"\nConsumer Groups:")
+            click.echo("\nConsumer Groups:")
             click.echo("=" * 30)
 
             for group in groups:
@@ -423,7 +415,7 @@ def stream_info(ctx, stream_name, consumer_group):
                     consumers = await redis_client.xinfo_consumers(
                         stream_name, consumer_group
                     )
-                    click.echo(f"\nConsumers:")
+                    click.echo("\nConsumers:")
                     for consumer in consumers:
                         click.echo(
                             f"  {consumer['name']}: {consumer['pending']} pending"

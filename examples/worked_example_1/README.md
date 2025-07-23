@@ -80,6 +80,39 @@ Redis Storage ← Bundle System ← Async Processing ← CCTBX Geometry ← PyTo
 - **Stream**: `geometry_requests_responses`
 - **Behavior**: Dedicated response processing
 
+### Stream Configuration
+
+**No More Magic Constants!** The system now uses configurable stream parameters:
+
+```python
+# Centralized stream configuration
+STREAM_CONFIG = {
+    "request_stream_name": "geometry_requests",
+    "response_stream_name": "geometry_requests_responses",
+    "agent_consumer_group": "geometry_agents",
+    "minimizer_consumer_group": "minimizer_consumer",
+}
+
+# Agent configuration
+agent = AsyncGeometryAgent(
+    agent_id="test_agent",
+    redis_manager=redis_manager,
+    stream_name=STREAM_CONFIG["request_stream_name"],
+    consumer_group=STREAM_CONFIG["agent_consumer_group"],
+)
+
+# Minimizer configuration
+minimizer = GeometryMinimizer(
+    redis_manager=redis_manager,
+    macromolecule_bundle_id=bundle_id,
+    # ... other parameters ...
+    request_stream_name=STREAM_CONFIG["request_stream_name"],
+    response_stream_name=STREAM_CONFIG["response_stream_name"],
+    consumer_group=STREAM_CONFIG["minimizer_consumer_group"],
+    consumer_name=None,  # Auto-generated
+)
+```
+
 ## 📦 Bundle System
 
 ### Bundle Types
@@ -232,7 +265,7 @@ shaken_bundle_id = redis_manager.store_bundle(shaken_bundle)
 #### 3. Minimization Setup
 
 ```python
-# Create geometry minimizer
+# Create geometry minimizer with configured streams
 minimizer = GeometryMinimizer(
     redis_manager=redis_manager,
     macromolecule_bundle_id=shaken_bundle_id,
@@ -241,6 +274,11 @@ minimizer = GeometryMinimizer(
     max_iterations=1000,
     convergence_threshold=1e-6,
     timeout_seconds=3.0,
+    # Stream configuration - no more magic constants!
+    request_stream_name=STREAM_CONFIG["request_stream_name"],
+    response_stream_name=STREAM_CONFIG["response_stream_name"],
+    consumer_group=STREAM_CONFIG["minimizer_consumer_group"],
+    consumer_name=None,  # Auto-generated
 )
 ```
 
@@ -382,6 +420,11 @@ minimizer = GeometryMinimizer(
     timeout_seconds=30.0,                     # Request timeout
     device=torch.device("cpu"),               # PyTorch device
     dtype=torch.float32,                      # PyTorch data type
+    # Stream configuration
+    request_stream_name="geometry_requests",   # Stream for sending requests
+    response_stream_name="geometry_requests_responses", # Stream for receiving responses
+    consumer_group="minimizer_consumer",      # Consumer group for responses
+    consumer_name=None,                       # Auto-generated if None
 )
 ```
 

@@ -13,11 +13,6 @@ import logging
 import sys
 import time
 import uuid
-from datetime import datetime
-from pathlib import Path
-
-
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from agentbx.core.agents.async_geometry_agent import AsyncGeometryAgent
 from agentbx.core.agents.async_geometry_agent import GeometryRequest
@@ -125,7 +120,7 @@ async def debug_geometry_agent():
     print("5. Testing async request/response...")
     try:
         # Start the agent
-        agent_task = asyncio.create_task(agent.start())
+        asyncio.create_task(agent.start())
 
         # Give agent time to start
         await asyncio.sleep(2)

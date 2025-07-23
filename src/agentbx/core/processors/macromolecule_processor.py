@@ -9,12 +9,12 @@ with PDB hierarchy, from which other processors derive xray_structure and geomet
 """
 
 import logging
-import os
 from typing import Any
 from typing import Dict
 from typing import List
 
 from agentbx.core.bundle_base import Bundle
+from agentbx.schemas.generated import MacromoleculeDataBundle
 
 from .base import SinglePurposeProcessor
 
@@ -52,6 +52,9 @@ class MacromoleculeProcessor(SinglePurposeProcessor):
 
         Returns:
             Bundle ID of the created macromolecule bundle
+
+        Raises:
+            Exception: If there is an error creating the macromolecule bundle.
         """
         try:
             import iotbx.pdb
@@ -99,6 +102,16 @@ class MacromoleculeProcessor(SinglePurposeProcessor):
             )
             macromolecule_bundle.add_metadata("dialect", "cctbx")
 
+            # Validate with schema
+            MacromoleculeDataBundle(
+                pdb_hierarchy=pdb_hierarchy,
+                crystal_symmetry=crystal_symmetry,
+                model_manager=model_manager,
+                restraint_manager=restraint_manager,
+                xray_structure=xray_structure,
+                macromolecule_metadata=macromolecule_bundle.metadata,
+            )
+            print("[Schema Validation] MacromoleculeDataBundle validation successful.")
             # Store bundle
             bundle_id = self.store_bundle(macromolecule_bundle)
 
@@ -123,6 +136,9 @@ class MacromoleculeProcessor(SinglePurposeProcessor):
 
         Returns:
             Updated bundle ID
+
+        Raises:
+            Exception: If there is an error updating the coordinates.
         """
         try:
             # Get the macromolecule bundle

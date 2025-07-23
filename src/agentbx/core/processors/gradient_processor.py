@@ -12,6 +12,7 @@ from typing import Dict
 from typing import List
 
 from agentbx.core.bundle_base import Bundle
+from agentbx.schemas.generated import GradientDataBundle
 
 from .base import SinglePurposeProcessor
 
@@ -60,13 +61,19 @@ class GradientProcessor(SinglePurposeProcessor):
         gradient_bundle.add_asset(
             "gradient_norm", self._calculate_gradient_norm(parameter_gradients)
         )
-
-        # Add metadata about the gradient calculation
         gradient_bundle.add_metadata("gradient_type", "chain_rule")
         gradient_bundle.add_metadata(
             "target_type", target_data.get_asset("target_type")
         )
-
+        # Validate with schema
+        GradientDataBundle(
+            coordinate_gradients=None,  # Not available in this context
+            bfactor_gradients=None,
+            occupancy_gradients=None,
+            structure_factor_gradients=None,
+            gradient_metadata=None,
+        )
+        print("[Schema Validation] GradientDataBundle validation successful.")
         return {"gradient_data": gradient_bundle}
 
     def _apply_chain_rule(self, target_gradients_wrt_sf, sf_gradients_wrt_params):

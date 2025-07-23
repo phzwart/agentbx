@@ -6,7 +6,6 @@ import argparse
 import json
 import logging
 import sys
-from typing import Optional
 
 from agentbx.core.redis_manager import RedisManager
 

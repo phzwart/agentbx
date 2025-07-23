@@ -9,11 +9,10 @@ This example shows how to:
 """
 
 import sys
-from pathlib import Path
 
 
 # Add the src directory to the path so we can import agentbx modules
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
+
 
 try:
     from agentbx.agents.geometry_processor import CctbxGeometryProcessor

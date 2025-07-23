@@ -4,18 +4,10 @@ Test script to verify geometry minimizer consumer group setup.
 """
 
 import asyncio
-import json
 import logging
 
 # Add src to path for imports
 import sys
-import time
-import uuid
-from datetime import datetime
-from pathlib import Path
-
-
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from agentbx.core.clients.geometry_minimizer import GeometryMinimizer
 from agentbx.core.processors.macromolecule_processor import MacromoleculeProcessor
@@ -83,13 +75,13 @@ async def test_minimizer_consumer():
     print("4. Testing forward pass (geometry calculation)...")
     try:
         gradients_tensor, geometry_bundle_id = await minimizer.forward()
-        print(f"   ✅ Forward pass successful")
+        print("   ✅ Forward pass successful")
         print(f"   ✅ Geometry bundle ID: {geometry_bundle_id}")
         print(f"   ✅ Gradients tensor shape: {gradients_tensor.shape}")
 
         # Verify bundle exists
         geometry_bundle = redis_manager.get_bundle(geometry_bundle_id)
-        print(f"   ✅ Geometry bundle retrieved successfully")
+        print("   ✅ Geometry bundle retrieved successfully")
 
         # Check bundle contents
         assets = list(geometry_bundle.assets.keys())

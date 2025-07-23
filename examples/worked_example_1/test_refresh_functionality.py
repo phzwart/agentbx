@@ -6,13 +6,6 @@ Test script to demonstrate the refresh functionality in the async geometry agent
 import asyncio
 import logging
 import os
-import sys
-import time
-from pathlib import Path
-
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from agentbx.core.agents.async_geometry_agent import AsyncGeometryAgent
 from agentbx.core.clients.geometry_minimizer import GeometryMinimizer
@@ -58,7 +51,7 @@ async def test_refresh_functionality():
     print("   ✅ Agent initialized")
 
     # Start the agent in the background
-    agent_task = asyncio.create_task(agent.start())
+    asyncio.create_task(agent.start())
     print("   ✅ Agent started")
 
     # Give the agent a moment to start up
@@ -144,6 +137,5 @@ async def test_refresh_functionality():
 
 
 if __name__ == "__main__":
-    import sys
 
     asyncio.run(test_refresh_functionality())

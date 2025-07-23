@@ -15,15 +15,13 @@ This ensures that CCTBX objects are properly serialized/deserialized.
 import logging
 import os
 import sys
-import tempfile
-from pathlib import Path
-
-
-# Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 from agentbx.core.processors.macromolecule_processor import MacromoleculeProcessor
 from agentbx.core.redis_manager import RedisManager
+
+
+# Add src to path for imports
+# Remove: sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 
 def compute_total_energy(restraint_manager, model_manager):
@@ -70,11 +68,13 @@ def compute_total_energy(restraint_manager, model_manager):
             )
             print(f"Available attributes: {dir(energy_gradients)}")
             print(f"Gradients type: {type(energy_gradients.gradients)}")
-            print(
-                f"Gradients shape/length: {len(energy_gradients.gradients) if hasattr(energy_gradients.gradients, '__len__') else 'no len'}"
-            )
-        except:
-            pass
+            if hasattr(energy_gradients.gradients, "__len__"):
+                grad_shape = len(energy_gradients.gradients)
+            else:
+                grad_shape = "no len"
+            print(f"Gradients shape/length: {grad_shape}")
+        except Exception as e:
+            print(f"Error debugging energy gradients: {e}")
         return None, None
 
 
@@ -343,7 +343,9 @@ def test_basic_round_trip(redis_manager, processor, pdb_file):
                 or abs(orig_coord[2] - retr_coord[2]) > 1e-6
             ):
                 print(
-                    f"   ❌ Coordinate mismatch for atom {i}: {orig_coord} != {retr_coord}"
+                    f"   ❌ Coordinate mismatch for atom {i}: "
+                    f"{orig_coord} != "
+                    f"{retr_coord}"
                 )
                 hierarchy_passed = False
             else:
@@ -446,7 +448,7 @@ def test_basic_round_trip(redis_manager, processor, pdb_file):
 
 def test_coordinate_update_round_trip(redis_manager, processor, bundle_id):
     """Test coordinate update round trip."""
-    print(f"\n=== Testing Coordinate Update Round Trip ===")
+    print("\n=== Testing Coordinate Update Round Trip ===")
 
     # Get original bundle
     original_bundle = processor.get_bundle(bundle_id)
@@ -485,7 +487,7 @@ def test_coordinate_update_round_trip(redis_manager, processor, bundle_id):
     update_passed = True
 
     for i in range(min(10, len(updated_sites))):
-        orig_site = original_sites[i]
+        # orig_site = original_sites[i]
         mod_site = modified_sites[i]
         retr_site = updated_sites[i]
 
@@ -554,7 +556,7 @@ def test_multiple_round_trips(redis_manager, processor, pdb_file, num_round_trip
 
 def test_bundle_inspection(redis_manager, processor, bundle_id):
     """Test bundle inspection capabilities."""
-    print(f"\n=== Testing Bundle Inspection ===")
+    print("\n=== Testing Bundle Inspection ===")
 
     # Test bundle listing
     print("1. Listing bundles...")
