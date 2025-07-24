@@ -50,8 +50,8 @@ def parse_args():
     parser.add_argument(
         "--shake-magnitude",
         type=float,
-        default=0.5,
-        help="Magnitude for coordinate shaking (default: 0.5)",
+        default=0.2,
+        help="Magnitude for coordinate shaking (default: 0.0)",
     )
     return parser.parse_args()
 
@@ -68,23 +68,19 @@ async def main(pdbfile, shake_magnitude):
     )
 
     await agent.initialize()
-    print("   ✅ Agent initialized")
 
     # Start the agent in the background
     asyncio.create_task(agent.start())
-    print("   ✅ Agent started")
 
     # Give the agent a moment to start up
     await asyncio.sleep(2)
 
     with redis_manager:
-        print("Connected to Redis.")
 
         # 2. Read in a PDB file and load as a macromolecule bundle
         pdb_path = os.path.abspath(pdbfile)
         processor = MacromoleculeProcessor(redis_manager, "workflow_processor")
         macromolecule_bundle_id = processor.create_macromolecule_bundle(pdb_path)
-        print(f"Loaded macromolecule bundle: {macromolecule_bundle_id}")
 
         # 3. Load and prepare macromolecule data
         macromolecule_bundle = redis_manager.get_bundle(macromolecule_bundle_id)
@@ -97,13 +93,25 @@ async def main(pdbfile, shake_magnitude):
         minimizer = GeometryMinimizer(
             redis_manager=redis_manager,
             macromolecule_bundle_id=shaken_bundle_id,
-            optimizer_factory=torch.optim.Adam,
-            optimizer_kwargs={"lr": 0.33},
-            scheduler_factory=torch.optim.lr_scheduler.CosineAnnealingLR,
-            scheduler_kwargs={"T_max": 1000, "eta_min": 0.0},
-            max_iterations=100,
+            optimizer_factory=torch.optim.Adam,  # Use Adam instead of LBFGS for async compatibility
+            optimizer_kwargs={
+                "lr": 0.9,  # earning rate for Adam
+                "betas": (0.9, 0.999),  # Adam beta parameters
+                "eps": 1e-8,  # Adam epsilon
+                "weight_decay": 0.0,  # No weight decay
+            },
+            scheduler_factory=torch.optim.lr_scheduler.CyclicLR,
+            scheduler_kwargs={
+                "base_lr": 0.1,  # minimum learning rate
+                "max_lr": 0.9,  # maximum learning rate
+                "step_size_up": 15,  # number of iterations to reach max_lr
+                "step_size_down": 15,  # number of iterations to reach min_lr
+                "mode": "triangular2",  # decreases amplitude each cycle
+                "cycle_momentum": False,  # set to False for Adam
+            },
+            max_iterations=1000,  # More iterations since Adam takes smaller steps than LBFGS
             convergence_threshold=1e-6,
-            timeout_seconds=3.0,
+            timeout_seconds=30.0,  # Longer timeout for more iterations
             # Stream configuration - no more magic constants!
             request_stream_name=STREAM_CONFIG["request_stream_name"],
             response_stream_name=STREAM_CONFIG["response_stream_name"],
@@ -113,7 +121,7 @@ async def main(pdbfile, shake_magnitude):
 
         # 5. Run the geometry minimization loop
         results = await minimizer.minimize(refresh_restraints=False)
-        print("Minimization results:")
+        # print("Minimization results:")
         print(results)
 
     # Stop the agent
