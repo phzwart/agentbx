@@ -1,0 +1,22 @@
+✨ Add classic SyncGeometryAgent: external gradient/loss PyTorch pattern
+
+🆕 Introduce SyncGeometryAgent, a classic PyTorch-style synchronous agent for geometry minimization.
+
+🔬 Pattern:
+  - .forward() computes and returns only the energy/loss as a scalar tensor.
+  - .backward() computes and sets gradients in .grad using the external CCTBX engine.
+  - Optimizer loop (Adam/SGD):
+      1️⃣ optimizer.zero_grad()
+      2️⃣ loss = agent.forward()
+      3️⃣ agent.backward()
+      4️⃣ optimizer.step()
+  - LBFGS closure uses the same split: computes loss in .forward(), sets gradients in .backward(), returns loss.
+
+⚡️ Features:
+- No PyTorch autograd: gradients are set manually from CCTBX.
+- Tracks energy and gradient call counts.
+- Logs learning rate at each iteration.
+- Supports learning rate schedulers (CyclicLR, StepLR, etc).
+- Clear comments and docstrings clarify the external gradient pattern for future maintainers.
+
+📝 This pattern is as close as possible to standard PyTorch, but adapted for external (non-autograd) gradient engines.
