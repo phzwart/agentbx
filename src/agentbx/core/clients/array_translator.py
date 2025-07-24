@@ -82,11 +82,6 @@ class ArrayTranslator:
         self.logger = logging.getLogger("ArrayTranslator")
         self.conversion_history: List[ConversionInfo] = []
 
-        if self.use_einops:
-            self.logger.info("Using einops for reshaping operations")
-        else:
-            self.logger.info("Using numpy/torch for reshaping operations")
-
     def convert(
         self,
         array: Any,

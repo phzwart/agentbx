@@ -239,6 +239,8 @@ python -m agentbx.utils.geometry_agent_cli register-agent \
 
 The `CoordinateTranslator` provides seamless conversion between CCTBX and PyTorch:
 
+> **Note**: LBFGS optimizer is now supported with a custom closure implementation that uses external geometry energy computation. The system provides both gradients and energy values from the async agent, enabling LBFGS to work with external geometry calculations.
+
 ```python
 from agentbx.core.coordinate_translator import CoordinateTranslator
 import torch
@@ -264,6 +266,85 @@ gradients = translator.torch_to_cctbx(tensor_coords.grad)
 # Register as Redis bundle
 bundle_id = translator.register_bundle("coords_123", tensor_coords)
 ```
+
+### Optimizer Compatibility
+
+The geometry minimization system supports various PyTorch optimizers:
+
+```python
+# Supported optimizers
+minimizer = GeometryMinimizer(
+    redis_manager=redis_manager,
+    macromolecule_bundle_id=bundle_id,
+    optimizer_factory=torch.optim.Adam,  # ✅ Supported
+    optimizer_kwargs={"lr": 1e-3},
+)
+
+# Also supported: SGD, RMSprop, Adagrad, etc.
+minimizer = GeometryMinimizer(
+    redis_manager=redis_manager,
+    macromolecule_bundle_id=bundle_id,
+    optimizer_factory=torch.optim.SGD,  # ✅ Supported
+    optimizer_kwargs={"lr": 0.01, "momentum": 0.9},
+)
+
+# LBFGS is now supported with external energy computation
+minimizer = GeometryMinimizer(
+    redis_manager=redis_manager,
+    macromolecule_bundle_id=bundle_id,
+    optimizer_factory=torch.optim.LBFGS,  # ✅ Now supported
+    optimizer_kwargs={
+        "lr": 1.0,
+        "max_iter": 20,
+        "max_eval": 25,
+        "tolerance_grad": 1e-7,
+        "tolerance_change": 1e-9,
+        "history_size": 100,
+    },
+)
+```
+
+### LBFGS with External Energy Computation
+
+The system now supports LBFGS optimization by providing a custom closure function that uses external geometry energy computation:
+
+```python
+# The closure function uses the geometry energy from the async agent
+def closure():
+    # Get geometry energy from external calculation
+    energy = get_external_geometry_energy()
+    return torch.tensor(energy, dtype=torch.float32)
+
+# LBFGS calls this closure to get the loss value
+optimizer.step(closure)
+```
+
+This approach allows LBFGS to work with external gradient and energy computation while maintaining the optimizer's internal line search and quasi-Newton update mechanisms.
+
+**Note on LBFGS Line Search**: LBFGS performs line search during optimization, calling the closure function multiple times to evaluate the objective function at different step sizes. The current implementation uses cached energy values during line search. For more accurate line search, a future enhancement could implement proper async energy calculation within the closure.
+
+### Efficient Calculation Types
+
+The system supports three calculation types for different use cases:
+
+1. **`energy_only`**: Calculates only the geometry energy (for LBFGS closure)
+2. **`gradients_only`**: Calculates only gradients (for specialized cases)
+3. **`gradients_and_energy`**: Calculates both (default, for all optimizers)
+
+```python
+# Request energy-only calculation for LBFGS closure
+energy_bundle_id = await agent._request_energy_calculation()
+
+# Request gradients-only calculation for specialized cases
+gradients_bundle_id = await agent._request_gradients_calculation()
+
+# Request both for all optimizers (default)
+full_bundle_id = await agent._request_geometry_calculation(
+    calculation_type="gradients_and_energy"
+)
+```
+
+**Note**: The system defaults to calculating both gradients and energy for all optimizers to support logging, convergence monitoring, and energy-based stopping criteria.
 
 ## Security Features
 

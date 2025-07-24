@@ -75,14 +75,18 @@ class GeometryMinimizer(nn.Module):
         consumer_name: Optional[str] = None,
     ):
         """
-        Initialize the geometry minimizer.
+        Initialize the async geometry minimizer.
+
+        NOTE: This is an ASYNC-ONLY implementation. LBFGS is NOT supported due to
+        incompatibility with the async architecture. Use a synchronous geometry
+        minimizer for LBFGS optimization.
 
         Args:
             redis_manager: Redis manager for bundle operations
             macromolecule_bundle_id: ID of the macromolecule bundle to minimize
-            optimizer_factory: Callable that returns a PyTorch optimizer, e.g. torch.optim.Adam
+            optimizer_factory: Callable that returns a PyTorch optimizer (EXCEPT LBFGS)
             optimizer_kwargs: Dict of kwargs for the optimizer
-            scheduler_factory: Optional callable that returns a PyTorch scheduler, e.g. torch.optim.lr_scheduler.CosineAnnealingLR
+            scheduler_factory: Optional callable that returns a PyTorch scheduler
             scheduler_kwargs: Optional dict of kwargs for the scheduler
             max_iterations: Maximum number of iterations
             convergence_threshold: Gradient norm threshold for convergence
@@ -93,8 +97,21 @@ class GeometryMinimizer(nn.Module):
             response_stream_name: Redis stream name for receiving responses
             consumer_group: Consumer group name for response handling
             consumer_name: Consumer name (auto-generated if None)
+
+        Raises:
+            ValueError: If optimizer_factory is torch.optim.LBFGS
         """
         super().__init__()
+
+        # Reject LBFGS explicitly
+        if optimizer_factory == torch.optim.LBFGS:
+            raise ValueError(
+                "LBFGS optimizer is not supported in the async geometry minimizer. "
+                "LBFGS requires synchronous closures which are incompatible with "
+                "the async Redis-based architecture. Please use a different optimizer "
+                "(e.g., Adam, SGD) or use a synchronous geometry minimizer for LBFGS."
+            )
+
         self.redis_manager = redis_manager
         self.macromolecule_bundle_id = macromolecule_bundle_id
         self.max_iterations = max_iterations
@@ -209,7 +226,9 @@ class GeometryMinimizer(nn.Module):
             raise
 
     async def _request_geometry_calculation(
-        self, refresh_restraints: bool = False
+        self,
+        refresh_restraints: bool = False,
+        calculation_type: str = "gradients_and_energy",
     ) -> str:
         """Request geometry calculation from the async agent."""
         try:
@@ -219,13 +238,18 @@ class GeometryMinimizer(nn.Module):
             request = GeometryRequest(
                 request_id=str(uuid.uuid4()),
                 macromolecule_bundle_id=self.macromolecule_bundle_id,
+                calculation_type=calculation_type,
                 priority=1,
                 refresh_restraints=refresh_restraints,
             )
 
-            # Send request to Redis stream
+            # Create a unique result key for acknowledgment tracking
+            result_key = f"geometry_result:{request.request_id}"
+
+            # Send request to Redis stream with result key
             message = {
                 "request": json.dumps(dataclasses.asdict(request), default=str),
+                "result_key": result_key,  # Enable acknowledgment tracking
                 "timestamp": time.time(),
                 "source": "geometry_minimizer",
             }
@@ -235,12 +259,136 @@ class GeometryMinimizer(nn.Module):
                 if refresh_restraints
                 else "using existing restraints"
             )
-            self.logger.info(f"Geometry calculation request sent ({refresh_status})")
+            self.logger.info(
+                f"Geometry calculation request sent ({refresh_status}, type: {calculation_type})"
+            )
+
+            # Wait for acknowledgment (optional - for debugging)
+            ack_key = f"ack:{result_key}"
+            ack_start_time = time.time()
+            ack_timeout = 1.0  # 1 second timeout for acknowledgment
+
+            while time.time() - ack_start_time < ack_timeout:
+                ack_data = await self.async_redis_client.get(ack_key)
+                if ack_data:
+                    break
+                await asyncio.sleep(0.01)
+
             # Wait for response
             response_bundle_id = await self._wait_for_geometry_response()
             return response_bundle_id
         except Exception as e:
             self.logger.error(f"Geometry calculation request failed: {e}")
+            raise
+
+    async def _request_energy_calculation(
+        self, refresh_restraints: bool = False
+    ) -> str:
+        """Request energy-only calculation (for LBFGS closure)."""
+        return await self._request_geometry_calculation(
+            refresh_restraints=refresh_restraints, calculation_type="energy_only"
+        )
+
+    async def _request_gradients_calculation(
+        self, refresh_restraints: bool = False
+    ) -> str:
+        """Request gradients-only calculation (for standard optimizers)."""
+        return await self._request_geometry_calculation(
+            refresh_restraints=refresh_restraints, calculation_type="gradients_only"
+        )
+
+    async def _wait_for_geometry_response_thread(self, thread_redis_client) -> str:
+        """Wait for geometry calculation response using a thread-specific Redis client."""
+        try:
+            # Create consumer group if it doesn't exist
+            try:
+                await thread_redis_client.xgroup_create(
+                    self.response_stream_name, self.consumer_group, mkstream=True
+                )
+            except Exception:
+                # Group already exists
+                pass
+
+            # Get the current timestamp to filter out old messages
+            current_time = time.time()
+            max_age_seconds = 30  # Ignore messages older than 30 seconds
+
+            # Read from response stream
+            start_time = time.time()
+            while time.time() - start_time < self.timeout_seconds:
+                try:
+                    # Read messages from the stream - use ">" to get only new messages
+                    messages = await thread_redis_client.xreadgroup(
+                        self.consumer_group,
+                        self.consumer_name,
+                        {self.response_stream_name: ">"},
+                        count=10,  # Read more messages to find the latest
+                        block=1000,
+                    )
+                    if messages:
+                        for stream, message_list in messages:
+                            # Sort messages by timestamp to get the latest
+                            valid_messages = []
+                            for message_id, fields in message_list:
+                                # Check message timestamp
+                                timestamp_str = fields.get(b"timestamp", b"").decode(
+                                    "utf-8"
+                                )
+                                try:
+                                    # Parse timestamp and check if it's recent
+                                    from datetime import datetime
+
+                                    msg_time = datetime.fromisoformat(
+                                        timestamp_str.replace("Z", "+00:00")
+                                    )
+                                    msg_timestamp = msg_time.timestamp()
+                                    if current_time - msg_timestamp < max_age_seconds:
+                                        valid_messages.append(
+                                            (message_id, fields, msg_timestamp)
+                                        )
+                                except Exception:
+                                    # If timestamp parsing fails, assume it's recent
+                                    valid_messages.append(
+                                        (message_id, fields, current_time)
+                                    )
+
+                            # Sort by timestamp (newest first) and process the latest
+                            if valid_messages:
+                                valid_messages.sort(key=lambda x: x[2], reverse=True)
+                                message_id, fields, _ = valid_messages[0]
+
+                                # Parse response
+                                response_data = fields.get(b"response", b"{}")
+                                if isinstance(response_data, bytes):
+                                    response_data = response_data.decode("utf-8")
+                                response_dict = json.loads(response_data)
+                                bundle_id = response_dict.get("geometry_bundle_id")
+                                if bundle_id:
+                                    # Acknowledge message
+                                    await thread_redis_client.xack(
+                                        self.response_stream_name,
+                                        self.consumer_group,
+                                        message_id,
+                                    )
+
+                                    return bundle_id
+
+                                # Acknowledge other messages to clear them from the stream
+                                for msg_id, _, _ in valid_messages[1:]:
+                                    await thread_redis_client.xack(
+                                        self.response_stream_name,
+                                        self.consumer_group,
+                                        msg_id,
+                                    )
+                    await asyncio.sleep(0.1)
+                except Exception as e:
+                    self.logger.warning(f"Error reading response stream (thread): {e}")
+                    await asyncio.sleep(0.1)
+            raise TimeoutError(
+                f"Geometry calculation timed out after {self.timeout_seconds} seconds"
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to wait for geometry response (thread): {e}")
             raise
 
     async def _wait_for_geometry_response(self) -> str:
@@ -310,23 +458,13 @@ class GeometryMinimizer(nn.Module):
                                 response_dict = json.loads(response_data)
                                 bundle_id = response_dict.get("geometry_bundle_id")
                                 if bundle_id:
-                                    # Add debugging for received bundle ID
-                                    self.logger.info(
-                                        f"Received bundle ID from stream: {bundle_id}"
-                                    )
-                                    self.logger.info(
-                                        f"Full response dict: {response_dict}"
-                                    )
-
                                     # Acknowledge message
                                     await self.async_redis_client.xack(
                                         self.response_stream_name,
                                         self.consumer_group,
                                         message_id,
                                     )
-                                    self.logger.info(
-                                        f"Received geometry response: {bundle_id}"
-                                    )
+
                                     return bundle_id
 
                                 # Acknowledge other messages to clear them from the stream
@@ -387,9 +525,12 @@ class GeometryMinimizer(nn.Module):
             ValueError: If the gradient bundle dialect is not supported.
             Exception: If bundle retrieval fails after retries.
         """
+        # Always get both gradients and energy for logging and convergence purposes
+        calculation_type = "gradients_and_energy"
+
         # Request geometry calculation, get result bundle key
         result_bundle_key = await self._request_geometry_calculation(
-            refresh_restraints=refresh_restraints
+            refresh_restraints=refresh_restraints, calculation_type=calculation_type
         )
 
         # Add retry logic for bundle retrieval
@@ -447,11 +588,21 @@ class GeometryMinimizer(nn.Module):
         else:
             raise ValueError(f"Unsupported gradient bundle dialect: {dialect}")
 
+        # Extract and store the energy value for LBFGS closure
+        if grad_bundle.has_asset("total_geometry_energy"):
+            self._current_energy = grad_bundle.get_asset("total_geometry_energy")
+        else:
+            self._current_energy = None
+            self.logger.warning("No total_geometry_energy found in gradient bundle")
+
         return gradients_tensor, result_bundle_key
 
     async def backward(self, gradients: torch.Tensor, step: int = 0) -> None:
         """
         Backward pass: update coordinates using gradients and send coordinate update bundle to Redis.
+
+        NOTE: This method only supports standard optimizers (Adam, SGD, etc.) that don't
+        require closure functions. LBFGS is not supported in this async implementation.
 
         Args:
             gradients: Gradient tensor
@@ -462,7 +613,8 @@ class GeometryMinimizer(nn.Module):
         self.optimizer.zero_grad()
         # Set gradients (positive for minimization - move opposite to gradient)
         self.current_coordinates.grad = gradients
-        # Update coordinates
+
+        # Standard optimizers (Adam, SGD, etc.) - async compatible
         self.optimizer.step()
 
         # Convert coordinates to numpy list format for coordinate update bundle
@@ -605,6 +757,7 @@ class GeometryMinimizer(nn.Module):
                 if hasattr(self, "latest_total_energy")
                 else None
             ),
+            "optimizer_type": type(self.optimizer).__name__,
         }
         return results
 
