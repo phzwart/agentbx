@@ -472,7 +472,9 @@ class ExperimentalDataBundle(BaseModel):
     checksum: Optional[str] = None
 
     # Required assets
-    f_obs: Any = Field(description="Observed structure factor amplitudes")
+    data_obs: Any = Field(
+        description="Observed structure factor amplitudes or intensities"
+    )
     miller_indices: Any = Field(
         description="Miller indices for experimental reflections"
     )
@@ -482,7 +484,8 @@ class ExperimentalDataBundle(BaseModel):
         default=None, description="Free R flags for cross-validation"
     )
     sigmas: Optional[Any] = Field(
-        default=None, description="Uncertainties in observed structure factors"
+        default=None,
+        description="Uncertainties in observed structure factors or intensities",
     )
     i_obs: Optional[Any] = Field(
         default=None, description="Observed intensities (if available)"
@@ -497,16 +500,14 @@ class ExperimentalDataBundle(BaseModel):
         default=None, description="Preferred target function for this dataset"
     )
 
-    @field_validator("f_obs")
+    @field_validator("data_obs")
     @classmethod
-    def validate_f_obs(cls, v):
-        """Validate Observed structure factor amplitudes"""
+    def validate_data_obs(cls, v):
+        """Validate Observed structure factor amplitudes or intensities"""
         if not hasattr(v, "indices"):
             raise ValueError("miller_array must have indices")
         if not hasattr(v, "data"):
             raise ValueError("miller_array must have data")
-        if (v.data() < 0).count(True) > 0:
-            raise ValueError("miller_array data must be positive")
         return v
 
     @field_validator("r_free_flags")
@@ -522,7 +523,7 @@ class ExperimentalDataBundle(BaseModel):
     @field_validator("sigmas")
     @classmethod
     def validate_sigmas(cls, v):
-        """Validate Uncertainties in observed structure factors"""
+        """Validate Uncertainties in observed structure factors or intensities"""
         if not hasattr(v, "indices"):
             raise ValueError("miller_array must have indices")
         if not hasattr(v, "data"):

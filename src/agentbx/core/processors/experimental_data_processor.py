@@ -50,24 +50,26 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         # Extract raw data information
         file_path = raw_data.get_asset("file_path")
         data_labels = raw_data.get_metadata("data_labels", {})
-        data_type = raw_data.get_metadata("data_type", "amplitudes")  # or "intensities"
+        observation_type = raw_data.get_metadata(
+            "data_type", "amplitudes"
+        )  # or "intensities"
 
         # Process the reflection file
-        f_obs, sigmas, r_free_flags, metadata = self._process_reflection_file(
-            file_path, data_labels, data_type
+        data_obs, sigmas, r_free_flags, metadata, observation_type = (
+            self._process_reflection_file(file_path, data_labels, observation_type)
         )
 
-        # Convert intensities to amplitudes if needed
-        if data_type == "intensities":
-            f_obs, sigmas = self._convert_intensities_to_amplitudes(f_obs, sigmas)
+        # Do not convert intensities to amplitudes; just use as-is
 
         # Validate data quality
-        self._validate_experimental_data(f_obs, sigmas, r_free_flags)
+        self._validate_experimental_data(
+            data_obs, sigmas, r_free_flags, observation_type
+        )
 
         # Create experimental data bundle
         exp_bundle = Bundle(bundle_type="experimental_data")
-        exp_bundle.add_asset("f_obs", f_obs)
-        exp_bundle.add_asset("miller_indices", f_obs.indices())
+        exp_bundle.add_asset("data_obs", data_obs)
+        exp_bundle.add_asset("miller_indices", data_obs.indices())
 
         if sigmas is not None:
             exp_bundle.add_asset("sigmas", sigmas)
@@ -79,32 +81,107 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         exp_bundle.add_asset("experimental_metadata", metadata)
 
         # Add target preferences based on data quality
-        target_prefs = self._determine_target_preferences(f_obs, sigmas, metadata)
+        target_prefs = self._determine_target_preferences(data_obs, sigmas, metadata)
         exp_bundle.add_asset("target_preferences", target_prefs)
 
-        # Validate with schema
-        ExperimentalDataBundle(
-            f_obs=f_obs,
-            miller_indices=f_obs.indices(),
-            sigmas=sigmas,
-            r_free_flags=r_free_flags,
+        # Only include sigmas and r_free_flags if they are Miller arrays
+        sigmas_for_schema = (
+            sigmas if hasattr(sigmas, "indices") and hasattr(sigmas, "data") else None
+        )
+        r_free_flags_for_schema = (
+            r_free_flags
+            if hasattr(r_free_flags, "indices") and hasattr(r_free_flags, "data")
+            else None
+        )
+        data_obs_for_schema = (
+            data_obs
+            if hasattr(data_obs, "indices") and hasattr(data_obs, "data")
+            else None
+        )
+
+        # If sigmas are part of the loaded Miller array, use them
+        if hasattr(data_obs, "sigmas") and callable(getattr(data_obs, "sigmas", None)):
+            sigmas_from_array = data_obs.sigmas()
+            if (
+                sigmas_from_array is not None
+                and hasattr(sigmas_from_array, "indices")
+                and hasattr(sigmas_from_array, "data")
+            ):
+                sigmas_for_schema = sigmas_from_array
+
+        # Only include sigmas and r_free_flags if they are Miller arrays
+        sigmas_for_schema = (
+            sigmas_for_schema
+            if hasattr(sigmas_for_schema, "indices")
+            and hasattr(sigmas_for_schema, "data")
+            else None
+        )
+        r_free_flags_for_schema = (
+            r_free_flags
+            if hasattr(r_free_flags, "indices") and hasattr(r_free_flags, "data")
+            else None
+        )
+        data_obs_for_schema = (
+            data_obs
+            if hasattr(data_obs, "indices") and hasattr(data_obs, "data")
+            else None
+        )
+
+        # Build kwargs for ExperimentalDataBundle
+        bundle_kwargs = dict(
+            data_obs=data_obs_for_schema,
+            miller_indices=data_obs.indices(),
             experimental_metadata=metadata,
             target_preferences=target_prefs,
         )
-        print("[Schema Validation] ExperimentalDataBundle validation successful.")
+        if sigmas_for_schema is not None:
+            bundle_kwargs["sigmas"] = sigmas_for_schema
+        if r_free_flags_for_schema is not None:
+            bundle_kwargs["r_free_flags"] = r_free_flags_for_schema
+
+        # Validate with schema
+        ExperimentalDataBundle(**bundle_kwargs)
+        self.logger.info(
+            "[Schema Validation] ExperimentalDataBundle validation successful."
+        )
         return {"experimental_data": exp_bundle}
 
     def _process_reflection_file(
-        self, file_path: str, data_labels: Dict[str, Any], data_type: str
-    ) -> tuple[Any, Any, Any, Dict[str, Any]]:
+        self, file_path: str, data_labels: Dict[str, Any], observation_type: str
+    ) -> tuple[Any, Any, Any, Dict[str, Any], str]:
         """
-        Process MTZ/HKL file to extract F_obs, sigmas, R_free.
+        Process MTZ/HKL file to extract observed data, sigmas, R_free.
         """
         from iotbx import reflection_file_reader
         from iotbx.reflection_file_utils import reflection_file_server
 
+        # Helper to print min/max or value for flex arrays or scalars
+        def _print_min_max(label, arr):
+            # If arr has .data(), use it; otherwise, treat arr as the data
+            data = arr.data() if hasattr(arr, "data") else arr
+            try:
+                if hasattr(data, "min") and hasattr(data, "max"):
+                    print(
+                        f"[Summary] {label} min/max:",
+                        float(data.min()),
+                        float(data.max()),
+                    )
+                elif hasattr(data, "__len__") and len(data) == 1:
+                    print(f"[Summary] {label} value:", float(data[0]))
+                elif hasattr(data, "as_double") and hasattr(data, "__getitem__"):
+                    print(f"[Summary] {label} value:", float(data.as_double()[0]))
+                else:
+                    print(f"[Summary] {label} value:", float(data))
+            except Exception:
+                print(f"[Summary] {label} value (repr):", repr(data))
+
         # Read reflection file
         reflection_file = reflection_file_reader.any_reflection_file(file_path)
+
+        # Debug: print all available Miller arrays and their labels
+        print("Available Miller arrays in file:")
+        for arr in reflection_file.as_miller_arrays():
+            print("  ", arr.info().label_string())
 
         if reflection_file is None:
             raise ValueError(f"Could not read reflection file: {file_path}")
@@ -117,28 +194,129 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
             err=None,
         )
 
-        # Extract F_obs (or I_obs)
+        # Get all available labels
+        available_labels = [
+            arr.info().label_string() for arr in reflection_file.as_miller_arrays()
+        ]
+
+        # Helper for substring matching
+        def find_label(label):
+            if not label:
+                return None
+            if label in available_labels:
+                return label
+            for l in available_labels:
+                if label in l:
+                    return l
+            return None
+
+        # NEW: If 'data' is specified, use it directly
+        data_label = data_labels.get("data")
+        if data_label:
+            actual_label = find_label(data_label)
+            if not actual_label:
+                raise ValueError(f"Could not find data column: {data_label}")
+            # Get the array
+            arr = server.get_miller_array(actual_label)
+            # Heuristic: if 'intensity' in label, treat as intensities, else amplitudes
+            if "intensity" in actual_label.lower():
+                observation_type = "intensities"
+            else:
+                observation_type = "amplitudes"
+            # If the array is a merged amplitude+sigma or intensity+sigma, split
+            if hasattr(arr, "sigmas") and arr.sigmas() is not None:
+                data_obs = arr
+                sigmas = arr.sigmas()
+            else:
+                data_obs = arr
+                sigmas = None
+            r_free_flags = None
+            # Try to find a matching R-free array in the same dataset
+            dataset_prefix = actual_label.split(",")[0]
+            rfree_label = next(
+                (
+                    l
+                    for l in available_labels
+                    if dataset_prefix in l and "free" in l.lower()
+                ),
+                None,
+            )
+            if rfree_label:
+                try:
+                    r_free_flags = server.get_miller_array(rfree_label)
+                    if r_free_flags is not None:
+                        r_free_flags = r_free_flags.as_bool()
+                except Exception:
+                    self.logger.warning(
+                        f"Could not read R_free flags from {rfree_label}"
+                    )
+            metadata = self._extract_metadata_from_file(reflection_file, file_path)
+            # Print summary for Miller arrays
+            print("[Summary] Miller array type:", observation_type)
+            print("[Summary] data_obs size:", data_obs.size())
+            _print_min_max("data_obs", data_obs)
+            if sigmas is not None:
+                print("[Summary] sigmas size:", sigmas.size())
+                _print_min_max("sigmas", sigmas)
+            if r_free_flags is not None:
+                print("[Summary] r_free_flags size:", r_free_flags.size())
+                print(
+                    "[Summary] r_free_flags fraction free:",
+                    float(r_free_flags.data().count(True)) / r_free_flags.size(),
+                )
+            return data_obs, sigmas, r_free_flags, metadata, observation_type
+
+        # Extract raw data information
         f_obs_label = data_labels.get("f_obs", data_labels.get("i_obs"))
         sigma_label = data_labels.get(
             "sigmas", data_labels.get("sigma_f", data_labels.get("sigma_i"))
         )
         r_free_label = data_labels.get("r_free_flags", "FreeR_flag")
 
-        # Get Miller arrays
-        f_obs = server.get_miller_array(f_obs_label)
+        # Get all available labels
+        available_labels = [
+            arr.info().label_string() for arr in reflection_file.as_miller_arrays()
+        ]
+
+        # Helper for substring matching
+        def find_label(label):
+            if not label:
+                return None
+            # Try exact match first
+            if label in available_labels:
+                return label
+            # Try substring match
+            for l in available_labels:
+                if label in l:
+                    return l
+            return None
+
+        # Get Miller arrays with substring matching
+        f_obs_actual_label = find_label(f_obs_label)
+        f_obs = (
+            server.get_miller_array(f_obs_actual_label) if f_obs_actual_label else None
+        )
         if f_obs is None:
             raise ValueError(f"Could not find data column: {f_obs_label}")
 
-        # Get sigmas if available
         sigmas = None
         if sigma_label:
-            sigmas = server.get_miller_array(sigma_label)
+            sigma_actual_label = find_label(sigma_label)
+            sigmas = (
+                server.get_miller_array(sigma_actual_label)
+                if sigma_actual_label
+                else None
+            )
 
-        # Get R_free flags if available
         r_free_flags = None
         if r_free_label:
+            r_free_actual_label = find_label(r_free_label)
             try:
-                r_free_flags = server.get_miller_array(r_free_label)
+                r_free_flags = (
+                    server.get_miller_array(r_free_actual_label)
+                    if r_free_actual_label
+                    else None
+                )
                 if r_free_flags is not None:
                     r_free_flags = r_free_flags.as_bool()
             except Exception:
@@ -147,7 +325,7 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         # Extract experimental metadata
         metadata = self._extract_metadata_from_file(reflection_file, file_path)
 
-        return f_obs, sigmas, r_free_flags, metadata
+        return f_obs, sigmas, r_free_flags, metadata, observation_type
 
     def _convert_intensities_to_amplitudes(
         self, i_obs: Any, sig_i: Any
@@ -174,11 +352,32 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         metadata = {
             "file_path": file_path,
             "file_type": "mtz",  # Default assumption
-            "space_group": str(reflection_file.space_group_info()),
-            "unit_cell": str(reflection_file.unit_cell()),
+            "space_group": None,
+            "unit_cell": None,
             "wavelength": 1.0,  # Default
             "temperature": "unknown",
         }
+
+        # Try to extract symmetry from the file object
+        try:
+            if hasattr(reflection_file, "space_group_info"):
+                metadata["space_group"] = str(reflection_file.space_group_info())
+            if hasattr(reflection_file, "unit_cell"):
+                metadata["unit_cell"] = str(reflection_file.unit_cell())
+        except Exception:
+            pass
+
+        # If not found, try to get from the first Miller array
+        try:
+            arrays = reflection_file.as_miller_arrays()
+            if arrays:
+                arr = arrays[0]
+                if metadata["space_group"] is None and hasattr(arr, "space_group_info"):
+                    metadata["space_group"] = str(arr.space_group_info())
+                if metadata["unit_cell"] is None and hasattr(arr, "unit_cell"):
+                    metadata["unit_cell"] = str(arr.unit_cell())
+        except Exception:
+            pass
 
         # Try to extract wavelength from file
         try:
@@ -199,39 +398,95 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         return metadata
 
     def _validate_experimental_data(
-        self, f_obs: Any, sigmas: Any, r_free_flags: Any
+        self,
+        data_obs: Any,
+        sigmas: Any,
+        r_free_flags: Any,
+        observation_type: str = "amplitudes",
     ) -> None:
         """
         Validate experimental data quality.
         """
+        # Robustly extract data arrays
+        obs_data = data_obs.data() if hasattr(data_obs, "data") else data_obs
+        sigmas_data = (
+            sigmas.data()
+            if (sigmas is not None and hasattr(sigmas, "data"))
+            else sigmas
+        )
+
         # Check data completeness
-        if f_obs.size() == 0:
+        if hasattr(data_obs, "size") and data_obs.size() == 0:
+            raise ValueError("No reflections found in experimental data")
+        elif (
+            not hasattr(data_obs, "size")
+            and hasattr(obs_data, "__len__")
+            and len(obs_data) == 0
+        ):
             raise ValueError("No reflections found in experimental data")
 
-        # Check for negative amplitudes
-        if (f_obs.data() < 0).count(True) > 0:
-            raise ValueError("Found negative structure factor amplitudes")
+        # Only check for negative amplitudes if observation_type is amplitudes
+        if observation_type == "amplitudes":
+            if hasattr(obs_data, "__lt__") and hasattr(obs_data, "count"):
+                if (obs_data < 0).count(True) > 0:
+                    raise ValueError("Found negative structure factor amplitudes")
+            elif hasattr(obs_data, "__iter__"):
+                if any(x < 0 for x in obs_data):
+                    raise ValueError("Found negative structure factor amplitudes")
+            elif obs_data < 0:
+                raise ValueError("Found negative structure factor amplitudes")
 
         # Check sigma/F ratios if sigmas available
-        if sigmas is not None:
-            sigma_f_ratios = sigmas.data() / f_obs.data()
-            if (sigma_f_ratios > 10).count(True) > f_obs.size() * 0.1:
-                self.logger.warning("Many reflections have high sigma/F ratios")
+        if sigmas is not None and sigmas_data is not None:
+            try:
+                sigma_f_ratios = sigmas_data / obs_data
+                if hasattr(sigma_f_ratios, "count") and hasattr(
+                    sigma_f_ratios, "__gt__"
+                ):
+                    if (sigma_f_ratios > 10).count(True) > (
+                        data_obs.size() if hasattr(data_obs, "size") else len(obs_data)
+                    ) * 0.1:
+                        self.logger.warning("Many reflections have high sigma/F ratios")
+                elif hasattr(sigma_f_ratios, "__iter__"):
+                    if (
+                        sum(x > 10 for x in sigma_f_ratios)
+                        > (
+                            data_obs.size()
+                            if hasattr(data_obs, "size")
+                            else len(obs_data)
+                        )
+                        * 0.1
+                    ):
+                        self.logger.warning("Many reflections have high sigma/F ratios")
+                elif sigma_f_ratios > 10:
+                    self.logger.warning("High sigma/F ratio for single observation")
+            except Exception:
+                self.logger.warning("Could not compute sigma/F ratios for validation")
 
         # Check R_free completeness if available
         if r_free_flags is not None:
-            r_free_fraction = r_free_flags.data().count(True) / r_free_flags.size()
+            r_free_data = (
+                r_free_flags.data() if hasattr(r_free_flags, "data") else r_free_flags
+            )
+            r_free_size = (
+                r_free_flags.size()
+                if hasattr(r_free_flags, "size")
+                else (len(r_free_data) if hasattr(r_free_data, "__len__") else 1)
+            )
+            r_free_count = (
+                r_free_data.count(True)
+                if hasattr(r_free_data, "count")
+                else sum(1 for x in r_free_data if x)
+            )
+            r_free_fraction = r_free_count / r_free_size
             if r_free_fraction < 0.01 or r_free_fraction > 0.2:
                 self.logger.warning(
                     f"R_free fraction ({r_free_fraction:.3f}) outside normal range"
                 )
 
     def _determine_target_preferences(
-        self, f_obs: Any, sigmas: Any, metadata: Dict[str, Any]
+        self, data_obs: Any, sigmas: Any, metadata: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """
-        Determine optimal target function based on data quality.
-        """
         preferences = {
             "default_target": "maximum_likelihood",
             "use_anomalous": False,
@@ -239,22 +494,26 @@ class ExperimentalDataProcessor(SinglePurposeProcessor):
         }
 
         # Check for anomalous data
-        if hasattr(f_obs, "anomalous_flag") and f_obs.anomalous_flag():
+        if hasattr(data_obs, "anomalous_flag") and data_obs.anomalous_flag():
             preferences["use_anomalous"] = True
 
         # Check data quality for target selection
         if sigmas is not None:
-            sigma_f_ratios = sigmas.data() / f_obs.data()
-            mean_sigma_f = sigma_f_ratios.mean()
+            obs_data = data_obs.data() if hasattr(data_obs, "data") else data_obs
+            sigmas_data = sigmas.data() if hasattr(sigmas, "data") else sigmas
+            sigma_f_ratios = sigmas_data / obs_data
+            if hasattr(sigma_f_ratios, "mean"):
+                mean_sigma_f = sigma_f_ratios.mean()
+            elif hasattr(sigma_f_ratios, "__len__") and len(sigma_f_ratios) > 0:
+                mean_sigma_f = sum(sigma_f_ratios) / len(sigma_f_ratios)
+            else:
+                mean_sigma_f = float(sigma_f_ratios)
 
             if mean_sigma_f > 0.5:
-                # High noise - prefer least squares
                 preferences["default_target"] = "least_squares"
             elif mean_sigma_f < 0.1:
-                # Low noise - maximum likelihood is fine
                 pass
             else:
-                # Medium noise - maximum likelihood with care
                 preferences["default_target"] = "maximum_likelihood"
 
         return preferences

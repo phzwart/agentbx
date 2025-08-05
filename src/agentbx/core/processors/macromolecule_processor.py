@@ -15,6 +15,7 @@ from typing import List
 
 from agentbx.core.bundle_base import Bundle
 from agentbx.schemas.generated import MacromoleculeDataBundle
+from agentbx.schemas.generated import XrayAtomicModelDataBundle
 
 from .base import SinglePurposeProcessor
 
@@ -111,7 +112,9 @@ class MacromoleculeProcessor(SinglePurposeProcessor):
                 xray_structure=xray_structure,
                 macromolecule_metadata=macromolecule_bundle.metadata,
             )
-            print("[Schema Validation] MacromoleculeDataBundle validation successful.")
+            logger.info(
+                "[Schema Validation] MacromoleculeDataBundle validation successful."
+            )
             # Store bundle
             bundle_id = self.store_bundle(macromolecule_bundle)
 
@@ -195,6 +198,42 @@ class MacromoleculeProcessor(SinglePurposeProcessor):
         """
         macromolecule_bundle = self.get_bundle(macromolecule_bundle_id)
         return macromolecule_bundle.get_asset("restraint_manager").geometry
+
+    def create_xray_atomic_model_bundle(
+        self, xray_structure, d_min, anomalous_flag=False
+    ) -> str:
+        """
+        Create an xray_atomic_model_data bundle from an xray_structure and resolution limit.
+        Args:
+            xray_structure: CCTBX xray.structure object
+            d_min: Minimum resolution (float)
+            anomalous_flag: Whether to generate anomalous indices (default: False)
+        Returns:
+            Bundle ID of the created xray_atomic_model_data bundle
+        """
+        from cctbx import miller
+
+        crystal_symmetry = xray_structure.crystal_symmetry()
+        miller_set = miller.build_set(
+            crystal_symmetry=crystal_symmetry,
+            anomalous_flag=anomalous_flag,
+            d_min=d_min,
+        )
+        from agentbx.core.bundle_base import Bundle
+
+        xray_atomic_model_bundle = Bundle(bundle_type="xray_atomic_model_data")
+        xray_atomic_model_bundle.add_asset("xray_structure", xray_structure)
+        xray_atomic_model_bundle.add_asset("miller_indices", miller_set)
+        # Validate with schema
+        XrayAtomicModelDataBundle(
+            xray_structure=xray_structure,
+            miller_indices=miller_set,
+        )
+        logger.info(
+            "[Schema Validation] XrayAtomicModelDataBundle validation successful."
+        )
+        bundle_id = self.store_bundle(xray_atomic_model_bundle)
+        return bundle_id
 
     def process_bundles(self, input_bundles: Dict[str, Bundle]) -> Dict[str, Bundle]:
         """

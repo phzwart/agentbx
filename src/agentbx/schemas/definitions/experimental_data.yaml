@@ -5,7 +5,7 @@ task_type: experimental_data
 description: "Experimental crystallographic data for refinement and validation"
 
 required_assets:
-  - f_obs
+  - data_obs
   - miller_indices
 
 optional_assets:
@@ -17,38 +17,39 @@ optional_assets:
   - target_preferences
 
 asset_definitions:
-  f_obs:
-    description: "Observed structure factor amplitudes"
+  data_obs:
+    description: "Observed structure factor amplitudes or intensities"
     data_type: "cctbx.miller.array"
     required_attributes: ["indices", "data"]
     data_must_be_real: true
-    data_must_be_positive: true
+    # Positivity is only required for amplitudes, not intensities
+    data_must_be_positive_if_amplitude: true
     checksum_required: true
 
   miller_indices:
     description: "Miller indices for experimental reflections"
     data_type: "cctbx.miller.set"
     required_attributes: ["indices", "unit_cell", "space_group"]
-    must_match_f_obs: true
+    must_match_data_obs: true
 
   r_free_flags:
     description: "Free R flags for cross-validation"
     data_type: "cctbx.miller.array"
     data_type_must_be: "bool"
-    must_match_f_obs_indices: true
+    must_match_data_obs_indices: true
     recommended_free_fraction: [0.05, 0.10]
 
   sigmas:
-    description: "Uncertainties in observed structure factors"
+    description: "Uncertainties in observed structure factors or intensities"
     data_type: "cctbx.miller.array"
     data_must_be_positive: true
-    must_match_f_obs_indices: true
+    must_match_data_obs_indices: true
 
   i_obs:
     description: "Observed intensities (if available)"
     data_type: "cctbx.miller.array"
     data_must_be_positive: true
-    alternative_to: [f_obs]
+    alternative_to: [data_obs]
 
   anomalous_data:
     description: "Anomalous scattering data (F+, F-, or I+, I-)"
@@ -70,23 +71,23 @@ asset_definitions:
     default_target: "maximum_likelihood"
 
 validation_rules:
-  f_obs:
+  data_obs:
     - indices_not_empty: true
-    - positive_amplitudes: true
-    - reasonable_amplitude_range: true
+    - positive_amplitudes_if_type: amplitude
+    - reasonable_value_range: true
     - no_systematic_absences_violation: true
 
   r_free_flags:
     - reasonable_free_fraction: [0.03, 0.15]
     - random_distribution: true
-    - indices_match_f_obs: true
+    - indices_match_data_obs: true
 
   sigmas:
     - positive_sigmas: true
-    - reasonable_sigma_f_ratio: [0.01, 0.5] # sigma/F should be reasonable
+    - reasonable_sigma_obs_ratio: [0.01, 0.5] # sigma/obs should be reasonable
 
   resolution_consistency:
-    - f_obs_resolution_matches_metadata: true
+    - data_obs_resolution_matches_metadata: true
     - reasonable_resolution_range: true
 
   completeness_checks:
@@ -97,19 +98,19 @@ workflow_patterns:
   intensity_to_amplitudes:
     - input: [i_obs, sigmas]
     - process: "french_wilson"
-    - output: [f_obs, sigmas]
+    - output: [data_obs, sigmas]
 
   anomalous_processing:
     - input: [anomalous_data]
     - process: "anomalous_scaling"
-    - output: [f_obs, anomalous_differences]
+    - output: [data_obs, anomalous_differences]
 
   data_validation:
     - checks: ["completeness", "resolution", "systematic_absences"]
     - outputs: [validation_report]
 
 produces_for:
-  - target_data # F_obs needed for target calculations
+  - target_data # data_obs needed for target calculations
   - validation_data # Experimental data for quality assessment
   - scaling_data # For absolute scaling procedures
 
